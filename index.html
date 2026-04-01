@@ -1,0 +1,2214 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>🐝 Spelling Bee</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=Outfit:wght@300;400;500;600&display=swap');
+
+:root {
+  --bg: #121212;
+  --surface: #1E1E1E;
+  --text: #F5F5F5;
+  --muted: #A0A0A0;
+  --border: #333333;
+  --accent: #F2A900;
+  --accent-hover: #D99700;
+  --green: #4CAF50;
+  --red: #E53935;
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Outfit', sans-serif;
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  -webkit-font-smoothing: antialiased;
+}
+
+.wrapper {
+  width: 100%;
+  max-width: 600px;
+  padding: 30px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+/* HEADER */
+.header { text-align: center; }
+.logo {
+  font-family: 'DM Serif Display', serif;
+  font-size: 3rem;
+  color: var(--text);
+  margin-bottom: 6px;
+  letter-spacing: -0.5px;
+}
+.logo-bee { font-family: initial; font-size: 2.2rem; vertical-align: middle; }
+.tagline {
+  font-size: 0.8rem;
+  color: var(--muted);
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  font-weight: 500;
+}
+
+/* DIFF SELECTOR */
+.diff-selector-wrap { display: flex; flex-direction: column; gap: 12px; }
+.diff-selector-label {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  color: var(--muted);
+  font-weight: 600;
+}
+.diff-grid { 
+  display: grid; 
+  grid-template-columns: repeat(4, 1fr); 
+  gap: 8px; 
+}
+.diff-btn {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 8px 4px;
+  background: var(--surface);
+  cursor: pointer;
+  font-family: 'Outfit', sans-serif;
+  font-size: 0.85rem;
+  color: var(--muted);
+  transition: all 0.2s ease;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+.diff-btn:hover { border-color: var(--text); color: var(--text); }
+.diff-btn.active {
+  background: var(--text);
+  border-color: var(--text);
+  color: var(--bg);
+}
+.diff-btn .dname {
+  font-weight: 500;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  column-gap: 0.28em;
+}
+.diff-btn .dcount { font-size: 0.75rem; opacity: 0.7; }
+
+/* STATS */
+.stats-bar {
+  display: flex;
+  justify-content: space-between;
+  border-top: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+  padding: 16px 0;
+}
+.stat-pill {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.stat-label {
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  color: var(--muted);
+  font-weight: 500;
+}
+.stat-value {
+  font-family: 'DM Serif Display', serif;
+  font-size: 1.6rem;
+  color: var(--text);
+  line-height: 1;
+}
+
+/* GAME CARD */
+.game-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 32px;
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.02);
+  position: relative;
+}
+
+/* TIMER */
+.timer-wrap { margin-bottom: 24px; display: flex; flex-direction: column; gap: 8px; }
+.timer-track {
+  width: 100%;
+  height: 4px;
+  background: var(--border);
+  border-radius: 2px;
+  overflow: hidden;
+}
+.timer-bar {
+  height: 100%;
+  background: var(--text);
+  transition: width 0.1s linear, background 0.4s;
+}
+.timer-bar.warning { background: var(--accent); }
+.timer-bar.danger { background: var(--red); }
+.timer-label {
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: var(--muted);
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+.timer-label.danger { color: var(--red); }
+
+/* WORD DIFF ROW */
+.word-diff-row { display: none; }
+
+/* WORD AREA */
+.word-area {
+  text-align: center;
+  margin-bottom: 32px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+}
+.listen-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.listen-btn, .tts-btn {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 50%;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text);
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  flex-shrink: 0;
+}
+.listen-btn.primary-tts, .tts-btn.primary-tts {
+  width: 72px;
+  height: 72px;
+  font-size: 1.6rem;
+}
+.listen-btn.secondary-tts, .tts-btn.secondary-tts {
+  width: 40px;
+  height: 40px;
+  font-size: 1rem;
+}
+.listen-btn:hover { background: var(--surface); border-color: var(--text); transform: scale(1.05); }
+.listen-btn.speaking { border-color: var(--accent); background: #FFFDF5; }
+.tts-btn:hover { background: var(--surface); border-color: var(--text); transform: scale(1.08); }
+.tts-btn.speaking { border-color: #7C9FD9; background: #0d1a2e; }
+.tts-swap-btn {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 50%;
+  width: 36px;
+  height: 36px;
+  cursor: pointer;
+  font-size: 1rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text);
+  flex-shrink: 0;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.tts-swap-btn:hover { background: var(--surface); border-color: var(--text); transform: scale(1.06); }
+.hear-hint { display: none; }
+.definition-box {
+  font-size: 1rem;
+  color: var(--muted);
+  line-height: 1.5;
+  max-width: 90%;
+  font-weight: 300;
+}
+.def-label { display: none; }
+
+/* INPUT */
+.input-row { display: flex; flex-direction: column; gap: 20px; margin-bottom: 24px; }
+.spell-input {
+  width: 100%;
+  background: transparent;
+  border: none;
+  border-bottom: 2px solid var(--border);
+  padding: 12px 0;
+  font-family: 'Outfit', sans-serif;
+  font-size: 2.2rem;
+  font-weight: 400;
+  color: var(--text);
+  text-align: center;
+  outline: none;
+  transition: border-color 0.3s;
+  letter-spacing: 2px;
+}
+.spell-input:focus { border-color: var(--text); }
+.spell-input.correct { border-color: var(--green); color: var(--green); }
+.spell-input.wrong { border-color: var(--red); color: var(--red); }
+.spell-input::placeholder { color: var(--border); font-weight: 300; }
+.spell-input:disabled { opacity: 0.5; }
+
+.submit-btn {
+  background: var(--text);
+  color: var(--bg);
+  border: none;
+  border-radius: 8px;
+  padding: 14px 32px;
+  font-family: 'Outfit', sans-serif;
+  font-size: 1.05rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.2s;
+  align-self: center;
+  min-width: 180px;
+}
+.submit-btn:hover:not(:disabled) { background: #333; }
+.submit-btn:disabled { opacity: 0.3; cursor: not-allowed; }
+
+/* FEEDBACK */
+.feedback {
+  min-height: 22px;
+  text-align: center;
+  font-size: 0.95rem;
+  font-weight: 500;
+  transition: opacity 0.3s;
+}
+.feedback.correct-msg { color: var(--green); }
+.feedback.wrong-msg { color: var(--red); }
+.feedback.info-msg { color: var(--muted); }
+
+/* PROGRESS */
+.word-counter {
+  text-align: center;
+  font-size: 0.75rem;
+  color: var(--muted);
+  margin-top: 24px;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+}
+.word-dots {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+  margin-top: 14px;
+}
+.dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--border);
+  transition: background 0.3s;
+}
+.dot.done { background: var(--green); }
+.dot.current { background: var(--text); }
+.dot.wrong { background: var(--red); }
+
+/* OVERLAYS */
+.overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(18, 18, 18, 0.95);
+  backdrop-filter: blur(12px);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.4s ease;
+}
+.overlay.active { opacity: 1; pointer-events: all; }
+.overlay-card {
+  max-width: 500px;
+  width: 90%;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 22px;
+  padding: 40px;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  gap: 28px;
+  box-shadow: 0 20px 40px rgba(0,0,0,0.04);
+  transform: translateY(20px);
+  transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.overlay.active .overlay-card { transform: translateY(0); }
+.overlay-icon { font-size: 3.8rem; animation: float 3s ease-in-out infinite; display: block; }
+.overlay-title {
+  font-family: 'DM Serif Display', serif;
+  font-size: 3.2rem;
+  color: var(--text);
+  line-height: 1.1;
+}
+.overlay-sub {
+  color: var(--muted);
+  font-size: 1.05rem;
+  line-height: 1.55;
+  font-weight: 300;
+}
+.overlay-stats {
+  display: flex;
+  justify-content: space-between;
+  padding: 24px 0;
+  border-top: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+}
+.ov-stat { display: flex; flex-direction: column; gap: 8px; }
+.ov-stat-label {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  color: var(--muted);
+}
+.ov-stat-value {
+  font-family: 'DM Serif Display', serif;
+  font-size: 1.9rem;
+  color: var(--text);
+}
+.correct-reveal {
+  padding: 20px;
+  background: rgba(229, 57, 53, 0.1);
+  border-radius: 12px;
+  color: var(--red);
+}
+.cr-label { font-size: 0.75rem; text-transform: uppercase; font-weight: 600; letter-spacing: 1.5px; margin-bottom: 10px; }
+.cr-word { font-family: 'DM Serif Display', serif; font-size: 2.3rem; line-height: 1; margin-bottom: 8px; }
+.cr-yours { font-size: 0.95rem; opacity: 0.8; font-weight: 300; }
+.btn-primary {
+  background: var(--text);
+  color: var(--bg);
+  border: none;
+  border-radius: 8px;
+  padding: 16px 36px;
+  font-family: 'Outfit', sans-serif;
+  font-size: 1.05rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.2s, transform 0.2s;
+  align-self: center;
+}
+.btn-primary:hover { background: #333; transform: translateY(-2px); }
+
+/* START DIFF GRID */
+.start-diff-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
+}
+.start-diff-btn {
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 14px 6px;
+  background: transparent;
+  cursor: pointer;
+  font-family: 'Outfit', sans-serif;
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: var(--muted);
+  transition: all 0.2s ease;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  line-height: 1.35;
+}
+.start-diff-btn:hover { border-color: var(--text); color: var(--text); }
+.start-diff-btn.selected {
+  background: var(--text);
+  border-color: var(--text);
+  color: var(--bg);
+}
+.diff-btn.completed,
+.start-diff-btn.completed {
+  border: 2px solid #c9a227;
+  box-shadow: 0 0 0 1px rgba(201, 162, 39, 0.25), 0 4px 20px rgba(201, 162, 39, 0.08);
+  position: relative;
+}
+.diff-btn.completed .dname { padding-right: 2px; }
+.diff-btn .tier-crown {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+  flex-shrink: 0;
+  filter: drop-shadow(0 1px 2px rgba(0,0,0,0.4));
+}
+.diff-btn .tier-crown::before { content: ''; }
+.diff-btn.completed .tier-crown::before {
+  content: '👑';
+  display: block;
+  transform: translateY(-0.14em);
+}
+.diff-btn.completed .tier-crown { font-size: 0.78em; }
+
+/* Win overlay — beams grow from hub center (hub scales); inner layers only rotate */
+#winScreen {
+  overflow: hidden;
+}
+#winScreen .win-vfx {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+}
+.win-beam-hub {
+  position: absolute;
+  left: 50%;
+  top: 44%;
+  width: 220vmax;
+  height: 220vmax;
+  margin-left: -110vmax;
+  margin-top: -110vmax;
+  transform-origin: 50% 50%;
+  opacity: 0;
+  transform: scale(0);
+  will-change: transform, opacity;
+}
+#winScreen.active .win-beam-hub {
+  animation: win-beam-hub-life 5s cubic-bezier(0.15, 0.9, 0.25, 1) forwards;
+}
+@keyframes win-beam-hub-life {
+  0% {
+    opacity: 0;
+    transform: scale(0);
+  }
+  6% {
+    opacity: 1;
+  }
+  16% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  62% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform: scale(1.06);
+  }
+}
+@keyframes win-vfx-burst-reduced {
+  0% { opacity: 0; }
+  12% { opacity: 0.85; }
+  58% { opacity: 0.85; }
+  100% { opacity: 0; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .win-beam-hub {
+    transform: scale(1);
+  }
+  #winScreen.active .win-beam-hub {
+    animation: win-vfx-burst-reduced 4s ease forwards;
+  }
+}
+#winScreen .overlay-card {
+  position: relative;
+  z-index: 1;
+}
+.win-beam-hub .win-beams {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  background: repeating-conic-gradient(
+    from 0deg at 50% 50%,
+    transparent 0deg 5deg,
+    rgba(255, 220, 120, 0.14) 5deg 9deg,
+    transparent 9deg 14deg
+  );
+  animation: win-beams-rotate 28s linear infinite;
+}
+.win-beam-hub .win-beams-soft {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(ellipse 55% 45% at 50% 50%, rgba(242, 169, 0, 0.22) 0%, transparent 62%);
+}
+.win-beam-hub .win-beam-edge {
+  position: absolute;
+  inset: -40%;
+  background: conic-gradient(
+    from 0deg at 50% 50%,
+    rgba(255, 230, 140, 0) 0deg,
+    rgba(255, 214, 80, 0.06) 25deg,
+    rgba(255, 230, 140, 0) 50deg,
+    rgba(255, 214, 80, 0.08) 72deg,
+    rgba(255, 230, 140, 0) 95deg,
+    rgba(255, 214, 80, 0.06) 120deg,
+    rgba(255, 230, 140, 0) 145deg,
+    rgba(255, 214, 80, 0.07) 180deg,
+    rgba(255, 230, 140, 0) 210deg,
+    rgba(255, 214, 80, 0.06) 240deg,
+    rgba(255, 230, 140, 0) 285deg,
+    rgba(255, 214, 80, 0.08) 320deg,
+    rgba(255, 230, 140, 0) 360deg
+  );
+  animation: win-beams-rotate 42s linear infinite reverse;
+  opacity: 0.85;
+}
+@keyframes win-beams-rotate {
+  to { transform: rotate(360deg); }
+}
+.overlay-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  align-items: center;
+  width: 100%;
+}
+
+/* ANIM */
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  20%, 60% { transform: translateX(-6px); }
+  40%, 80% { transform: translateX(6px); }
+}
+.shake { animation: shake 0.4s ease; }
+@keyframes pop {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.02); }
+  100% { transform: scale(1); }
+}
+.pop { animation: pop 0.3s ease; }
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-10px); }
+}
+@media (max-width: 600px) {
+  .start-diff-grid { grid-template-columns: repeat(2, 1fr); }
+  .wrapper { padding: 28px 16px; gap: 24px; }
+  .game-card { padding: 28px 18px; }
+  .spell-input { font-size: 1.9rem; }
+  .overlay-card { padding: 28px 18px; }
+  .overlay-title { font-size: 2.6rem; }
+}
+</style>
+</head>
+<body>
+<div class="wrapper">
+  <div class="header">
+    <div class="logo"><span class="logo-bee">🐝</span> Spelling Bee</div>
+    <div class="tagline">Solo Challenge</div>
+  </div>
+
+  <div class="diff-selector-wrap">
+    <span class="diff-selector-label">⚙️ Difficulty Mode</span>
+    <div class="diff-grid">
+      <button class="diff-btn active" data-diff="beginner" onclick="changeDiff('beginner',this)"><span class="dname">Beginner<span class="tier-crown" aria-hidden="true"></span></span><span class="dcount" id="cnt-beginner"></span></button>
+      <button class="diff-btn" data-diff="novice"   onclick="changeDiff('novice',this)">  <span class="dname">Novice<span class="tier-crown" aria-hidden="true"></span></span>  <span class="dcount" id="cnt-novice"></span></button>
+      <button class="diff-btn" data-diff="moderate" onclick="changeDiff('moderate',this)"><span class="dname">Moderate<span class="tier-crown" aria-hidden="true"></span></span><span class="dcount" id="cnt-moderate"></span></button>
+      <button class="diff-btn" data-diff="advanced" onclick="changeDiff('advanced',this)"><span class="dname">Advanced<span class="tier-crown" aria-hidden="true"></span></span><span class="dcount" id="cnt-advanced"></span></button>
+      <button class="diff-btn" data-diff="expert"   onclick="changeDiff('expert',this)">  <span class="dname">Expert<span class="tier-crown" aria-hidden="true"></span></span>  <span class="dcount" id="cnt-expert"></span></button>
+      <button class="diff-btn" data-diff="genius"   onclick="changeDiff('genius',this)">  <span class="dname">Genius<span class="tier-crown" aria-hidden="true"></span></span>  <span class="dcount" id="cnt-genius"></span></button>
+      <button class="diff-btn" data-diff="master"   onclick="changeDiff('master',this)">  <span class="dname">Master<span class="tier-crown" aria-hidden="true"></span></span>  <span class="dcount" id="cnt-master"></span></button>
+      <button class="diff-btn" data-diff="random"   onclick="changeDiff('random',this)">  <span class="dname">🎲 Random</span><span class="dcount" id="cnt-random"></span></button>
+    </div>
+  </div>
+
+  <div class="stats-bar">
+    <div class="stat-pill"><div class="stat-label">Round</div><div class="stat-value" id="roundNum">1</div></div>
+    <div class="stat-pill"><div class="stat-label">Streak 🔥</div><div class="stat-value" style="color:var(--green)" id="streakVal">0</div></div>
+    <div class="stat-pill"><div class="stat-label">Best</div><div class="stat-value" id="bestVal">0</div></div>
+  </div>
+
+  <div class="game-card" id="gameCard">
+    <div class="timer-wrap">
+      <div class="timer-label" id="timerLabel">30s</div>
+      <div class="timer-track"><div class="timer-bar" id="timerBar" style="width:100%"></div></div>
+    </div>
+    <div class="word-diff-row" id="wordDiffRow" data-diff="beginner">
+      <div class="word-diff-dot"></div>
+      <div class="word-diff-name" id="wordDiffName">Beginner</div>
+    </div>
+    <div class="word-area">
+      <div class="listen-row">
+        <button type="button" class="listen-btn primary-tts" id="listenBtn" onclick="speakWord()" title="Hear the word (AI voice)">🔊</button>
+        <button type="button" class="tts-swap-btn" id="ttsSwapBtn" onclick="togglePrimaryTts()" title="Swap which voice is primary (saved for next visit)">🔗</button>
+        <button type="button" class="tts-btn secondary-tts" id="ttsBtn" onclick="speakWithBrowserTTS()" title="Hear the word (browser voice)">🗣️</button>
+      </div>
+      <div class="hear-hint">Click to hear the word</div>
+      <div class="definition-box">
+        <span class="def-label">📖 Definition</span>
+        <span id="defText">Waiting…</span>
+      </div>
+    </div>
+    <div class="input-row">
+      <input type="text" class="spell-input" id="spellInput" placeholder="type your spelling…"
+        autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"
+        oninput="onInput()" onkeydown="onKeyDown(event)">
+      <button class="submit-btn" id="submitBtn" onclick="submitAnswer()">Submit</button>
+    </div>
+    <div class="feedback info-msg" id="feedback">🔊 Listen carefully, then spell the word!</div>
+    <div class="word-counter" id="wordCounter">Word 1 of 10</div>
+    <div class="word-dots" id="wordDots"></div>
+  </div>
+</div>
+
+<!-- START -->
+<div class="overlay active" id="startScreen">
+  <div class="overlay-card">
+    <span class="overlay-icon">🐝</span>
+    <div class="overlay-title">Spelling Bee</div>
+    <div class="overlay-sub">Choose your difficulty, listen to each word, then type it before the timer runs out. The timer shrinks as your streak grows! 🔥</div>
+    <div class="start-diff-grid">
+      <button class="start-diff-btn selected" data-diff="beginner" onclick="selectStartDiff('beginner',this)">🟢<br>Beginner</button>
+      <button class="start-diff-btn" data-diff="novice"   onclick="selectStartDiff('novice',this)">🟩<br>Novice</button>
+      <button class="start-diff-btn" data-diff="moderate" onclick="selectStartDiff('moderate',this)">🔵<br>Moderate</button>
+      <button class="start-diff-btn" data-diff="advanced" onclick="selectStartDiff('advanced',this)">🟡<br>Advanced</button>
+      <button class="start-diff-btn" data-diff="expert"   onclick="selectStartDiff('expert',this)">🟠<br>Expert</button>
+      <button class="start-diff-btn" data-diff="genius"   onclick="selectStartDiff('genius',this)">🟣<br>Genius</button>
+      <button class="start-diff-btn" data-diff="master"   onclick="selectStartDiff('master',this)">🔴<br>Master</button>
+      <button class="start-diff-btn" data-diff="random"   onclick="selectStartDiff('random',this)">🎲<br>Random</button>
+    </div>
+    <button class="btn-primary" onclick="startGame()">Start Buzzing! 🐝</button>
+  </div>
+</div>
+
+<!-- ELIMINATED -->
+<div class="overlay" id="elimScreen">
+  <div class="overlay-card">
+    <span class="overlay-icon">😵</span>
+    <div class="overlay-title">Eliminated!</div>
+    <div class="correct-reveal">
+      <div class="cr-label">Correct spelling</div>
+      <div class="cr-word" id="correctWordDisplay">—</div>
+      <div class="cr-yours" id="yourAnswerDisplay"></div>
+    </div>
+    <div class="overlay-stats">
+      <div class="ov-stat"><div class="ov-stat-label">Round</div><div class="ov-stat-value" id="finalRound">1</div></div>
+      <div class="ov-stat"><div class="ov-stat-label">Streak</div><div class="ov-stat-value" id="finalStreak">0</div></div>
+      <div class="ov-stat"><div class="ov-stat-label">Best</div><div class="ov-stat-value" id="finalBest">0</div></div>
+    </div>
+    <button class="btn-primary" onclick="startNewRound()">Try Again 🐝</button>
+  </div>
+</div>
+
+<!-- TIER COMPLETE -->
+<div class="overlay" id="winScreen">
+  <div class="win-vfx" aria-hidden="true">
+    <div class="win-beam-hub">
+      <div class="win-beams-soft"></div>
+      <div class="win-beams"></div>
+      <div class="win-beam-edge"></div>
+    </div>
+  </div>
+  <div class="overlay-card">
+    <span class="overlay-icon">🏆</span>
+    <div class="overlay-title">Tier complete!</div>
+    <div class="overlay-sub" id="winSub">You spelled every word in this difficulty. Outstanding work!</div>
+    <div class="overlay-stats">
+      <div class="ov-stat"><div class="ov-stat-label">Difficulty</div><div class="ov-stat-value" id="winDiff" style="font-size:1.4rem;">—</div></div>
+      <div class="ov-stat"><div class="ov-stat-label">Words</div><div class="ov-stat-value" id="winWords">0</div></div>
+      <div class="ov-stat"><div class="ov-stat-label">Streak</div><div class="ov-stat-value" id="winStreak">0</div></div>
+    </div>
+    <div class="overlay-actions">
+      <button class="btn-primary" onclick="continueFromWin()">Continue</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ═══════════════════════════════════════════════════════
+// OFFICIAL WORD LIST — sourced from Bean's Can Spelling Bee
+// 7 difficulties: Beginner · Novice · Moderate · Advanced
+//                 Expert · Genius · Master
+// + Randomiser (draws from all pools)
+// ═══════════════════════════════════════════════════════
+const WORDS = {
+beginner: [
+  {w:'Air',d:'The invisible gaseous mixture surrounding the Earth, mainly nitrogen and oxygen'},
+  {w:'Baby',d:'A very young child or infant'},
+  {w:'Bad',d:'Of poor quality; not good'},
+  {w:'Bag',d:'A container used to carry things, like shopping'},
+  {w:'Ball',d:'A round object used in games and sports'},
+  {w:'Bar',d:'A rigid straight rod; a counter where drinks are served'},
+  {w:'Bat',d:'A stick used to hit a ball; a nocturnal flying mammal'},
+  {w:'Bee',d:'A winged insect that collects nectar and makes honey'},
+  {w:'Best',d:'Of the highest quality or most excellent kind'},
+  {w:'Big',d:'Large in size, extent, or intensity'},
+  {w:'Bird',d:'A warm-blooded animal with feathers and wings'},
+  {w:'Blue',d:'The colour of the sky on a clear day'},
+  {w:'Book',d:'A written or printed work consisting of pages bound together'},
+  {w:'Bug',d:'A small insect; an error in computer software'},
+  {w:'Bus',d:'A large motor vehicle carrying passengers on a fixed route'},
+  {w:'Cake',d:'A sweet baked food made from flour, sugar, eggs, and butter'},
+  {w:'Car',d:'A road vehicle with an engine, typically with four wheels'},
+  {w:'Cat',d:'A small domesticated carnivorous mammal kept as a pet'},
+  {w:'Cool',d:'Moderately cold; fashionably attractive or impressive'},
+  {w:'Cry',d:'To shed tears; to shout or call out loudly'},
+  {w:'Cup',d:'A small bowl-shaped container used for drinking'},
+  {w:'Dad',d:'An informal word for one\'s father'},
+  {w:'Dog',d:'A domesticated carnivorous mammal kept as a pet or for work'},
+  {w:'Duck',d:'A waterbird with a broad flat bill and webbed feet'},
+  {w:'Eat',d:'To put food into the mouth, chew, and swallow it'},
+  {w:'Elf',d:'A small mythical being with magical powers'},
+  {w:'End',d:'The final point or part of something'},
+  {w:'Eye',d:'The organ of sight in humans and animals'},
+  {w:'Face',d:'The front part of the head from forehead to chin'},
+  {w:'Fire',d:'The process of combustion producing heat, light, and flame'},
+  {w:'Fish',d:'A cold-blooded vertebrate animal living in water with fins and gills'},
+  {w:'Foot',d:'The lower extremity of the leg below the ankle'},
+  {w:'Gold',d:'A yellow precious metal used in jewellery and coins'},
+  {w:'Hand',d:'The end part of the arm beyond the wrist with fingers'},
+  {w:'Ink',d:'A coloured liquid used for writing, drawing, or printing'},
+  {w:'Kiss',d:'A touch with the lips as a greeting or expression of affection'},
+  {w:'Milk',d:'A white liquid produced by mammals to feed their young'},
+  {w:'Mix',d:'To combine or put together to form one substance'},
+  {w:'Mom',d:'An informal word for one\'s mother'},
+  {w:'Moon',d:'The natural satellite of the Earth, visible at night'},
+  {w:'Mug',d:'A large cylindrical cup with a handle; to attack and rob someone'},
+  {w:'Newb',d:'A person who is new to an activity or skill',alt:['Noob']},
+  {w:'Pie',d:'A baked dish of fruit or meat enclosed in pastry'},
+  {w:'Pink',d:'A pale red colour; a garden plant with fragrant flowers'},
+  {w:'Rain',d:'Water droplets condensed from atmospheric vapour falling to Earth'},
+  {w:'Rat',d:'A rodent larger than a mouse, often considered a pest'},
+  {w:'Red',d:'The colour of blood or a ripe tomato'},
+  {w:'Ruby',d:'A precious stone of a deep glowing red colour'},
+  {w:'Run',d:'To move at a speed faster than walking'},
+  {w:'Sit',d:'To rest with the weight on the buttocks and thighs'},
+  {w:'Size',d:'The physical dimensions or extent of an object'},
+  {w:'Snow',d:'Atmospheric water vapour frozen into ice crystals, falling as white flakes'},
+  {w:'Soda',d:'A sweet carbonated drink; a compound containing sodium'},
+  {w:'Star',d:'A fixed luminous point of light in the night sky'},
+  {w:'Suck',d:'To draw in by creating a partial vacuum'},
+  {w:'Sun',d:'The star at the centre of our solar system'},
+  {w:'Tag',d:'A label attached to something for identification; a chasing game'},
+  {w:'Tank',d:'A large container for liquid; an armoured military vehicle'},
+  {w:'Tap',d:'A device for controlling the flow of liquid from a pipe; to knock gently'},
+  {w:'Town',d:'A built-up area with a name and defined boundaries'},
+  {w:'Tree',d:'A tall plant with a wooden trunk and branches'},
+  {w:'Water',d:'A clear, colourless liquid essential for life'},
+  {w:'Wind',d:'Moving air, especially a current moving horizontally'},
+  {w:'Word',d:'A single distinct meaningful element of speech or writing'},
+  {w:'Zoo',d:'A place where wild animals are kept for public display'},
+],
+
+novice: [
+  {w:'Absorb',d:'To take in or soak up energy, liquid, or information'},
+  {w:'Angel',d:'A spiritual being believed to act as a messenger of God'},
+  {w:'Ash',d:'The powdery residue left after burning something'},
+  {w:'Bingo',d:'A game of chance using numbered cards'},
+  {w:'Black',d:'The darkest colour, absorbing all light; the opposite of white'},
+  {w:'Boss',d:'A person in charge of a workplace; an employer or manager'},
+  {w:'Brain',d:'The organ inside the skull that controls the body and thought'},
+  {w:'Burger',d:'A sandwich made with a cooked ground-meat patty'},
+  {w:'Burial',d:'The action of burying a dead body'},
+  {w:'Cabin',d:'A small shelter or house made of wood'},
+  {w:'Circle',d:'A perfectly round flat shape'},
+  {w:'Clever',d:'Quick to understand and learn things'},
+  {w:'Cliff',d:'A steep rock face, especially on a coast'},
+  {w:'Clutch',d:'To grasp tightly; a crucial or difficult moment'},
+  {w:'Comply',d:'To act in accordance with a wish or command'},
+  {w:'Convey',d:'To transport to a place; to communicate an idea or feeling'},
+  {w:'Crowd',d:'A large number of people gathered together'},
+  {w:'Dairy',d:'Containing or made from milk'},
+  {w:'Defy',d:'To openly resist or refuse to obey'},
+  {w:'Demon',d:'An evil spirit or devil'},
+  {w:'Echo',d:'A sound caused by the reflection of sound waves'},
+  {w:'Emoji',d:'A small digital image used to express emotion in messages'},
+  {w:'Erupt',d:'To break out suddenly and dramatically'},
+  {w:'Exert',d:'To apply or bring to bear a force or quality'},
+  {w:'Exile',d:'The state of being barred from one\'s native country'},
+  {w:'Film',d:'A story recorded on camera and shown in cinemas or on TV'},
+  {w:'Filter',d:'A device that removes unwanted material from a substance'},
+  {w:'Flower',d:'The seed-bearing part of a plant, often brightly coloured'},
+  {w:'Foggy',d:'Full of or resembling fog; difficult to see through'},
+  {w:'Forbid',d:'To refuse to allow something'},
+  {w:'Gender',d:'The state of being male or female; its social and cultural aspects'},
+  {w:'Ghost',d:'An apparition of a dead person believed to haunt the living'},
+  {w:'Giant',d:'An imaginary being of human form but superhuman size'},
+  {w:'Greedy',d:'Having an intense desire for more than one needs'},
+  {w:'Green',d:'The colour of grass and leaves; relating to environmental protection'},
+  {w:'Grub',d:'The larva of an insect; informal word for food'},
+  {w:'Hello',d:'Used as a greeting or to begin a phone conversation'},
+  {w:'Hotel',d:'An establishment providing accommodation and meals for travellers'},
+  {w:'House',d:'A building for human habitation'},
+  {w:'Human',d:'Relating to or characteristic of people'},
+  {w:'Hungry',d:'Feeling or showing the need or desire for food'},
+  {w:'Intent',d:'One\'s intention or objective; determined to do something'},
+  {w:'Iron',d:'A strong hard magnetic metallic element; a tool for smoothing clothes'},
+  {w:'Irony',d:'The expression of meaning using language that means the opposite'},
+  {w:'Land',d:'The solid surface of the Earth; a country or region'},
+  {w:'Length',d:'The measurement of something from end to end'},
+  {w:'Margin',d:'The edge or border of something'},
+  {w:'Melt',d:'To become liquid by heating; to soften or disappear gradually'},
+  {w:'Meow',d:'The cry made by a cat'},
+  {w:'Monk',d:'A member of a religious community of men living under vows'},
+  {w:'Noble',d:'Belonging to a hereditary class; having fine personal qualities'},
+  {w:'Orange',d:'A round citrus fruit with a tough bright reddish-yellow rind'},
+  {w:'Pasta',d:'An Italian food made from dough of wheat flour and water'},
+  {w:'Pear',d:'A yellowish-green edible fruit narrower at the stalk'},
+  {w:'Power',d:'The ability or capacity to do something'},
+  {w:'Prank',d:'A practical joke or mischievous act'},
+  {w:'Pray',d:'To address a prayer to God or another deity'},
+  {w:'Proof',d:'Evidence establishing a fact or the truth of a statement'},
+  {w:'Quack',d:'The characteristic sound made by a duck'},
+  {w:'Queen',d:'A female ruler of an independent state; the most powerful chess piece'},
+  {w:'Quill',d:'A large feather from a wing or tail; a pen made from one'},
+  {w:'Rally',d:'To bring together for concerted action; a mass meeting'},
+  {w:'Random',d:'Made or done without method or conscious decision'},
+  {w:'Reply',d:'A response to a question, letter, or other message'},
+  {w:'Robust',d:'Strong and healthy; sturdy in construction'},
+  {w:'Rot',d:'The process of decay; something regarded as worthless nonsense'},
+  {w:'Shake',d:'To move with quick, short, irregular movements'},
+  {w:'Shark',d:'A large predatory fish with rows of sharp teeth'},
+  {w:'Sigh',d:'To emit a long, deep breath expressing sadness or relief'},
+  {w:'Sock',d:'A garment for the foot and lower leg'},
+  {w:'State',d:'The particular condition something is in at a given time'},
+  {w:'Stew',d:'A dish of slow-cooked meat and vegetables in liquid'},
+  {w:'Still',d:'Not moving or making a sound; continuing up to the present'},
+  {w:'Stumble',d:'To trip or momentarily lose one\'s balance'},
+  {w:'Trauma',d:'A deeply distressing experience; physical injury'},
+  {w:'Twist',d:'To rotate or wind something around itself'},
+  {w:'Update',d:'To make something more modern or bring it up to date'},
+  {w:'Vein',d:'A blood vessel carrying blood toward the heart'},
+  {w:'Walk',d:'To move at a regular pace by lifting and setting down each foot'},
+  {w:'Way',d:'A method, style, or manner of doing something; a road or path'},
+  {w:'White',d:'The colour of snow or milk; the opposite of black'},
+  {w:'Workout',d:'A session of vigorous physical exercise or training'},
+  {w:'Wrist',d:'The joint connecting the hand with the forearm'},
+],
+
+moderate: [
+  {w:'Abolish',d:'To formally put an end to a system, practice, or institution'},
+  {w:'Absence',d:'The state of being away from a place or person'},
+  {w:'Abstract',d:'Existing in thought but not having a physical form'},
+  {w:'Agaric',d:'A type of mushroom, especially one of the gill fungi'},
+  {w:'Agnostic',d:'A person who believes that the existence of God is unknowable'},
+  {w:'Akin',d:'Of similar character; related by blood'},
+  {w:'Albeit',d:'Though; although'},
+  {w:'Alliance',d:'A union or association formed for mutual benefit'},
+  {w:'Alphabet',d:'A set of letters used to write one or more languages'},
+  {w:'Anatomical',d:'Relating to the structure of the body'},
+  {w:'Answer',d:'A response to a question; a solution to a problem'},
+  {w:'Appetite',d:'A natural desire to satisfy a bodily need, especially for food'},
+  {w:'Armor',d:'Metal coverings formerly worn to protect the body in battle'},
+  {w:'Atone',d:'To make amends for a wrong or injury'},
+  {w:'Automatic',d:'Working by itself with little or no direct human control'},
+  {w:'Await',d:'To wait for something expected'},
+  {w:'Bamboo',d:'A giant tropical grass with hollow woody stems'},
+  {w:'Bayonet',d:'A long blade fixed to a rifle for hand-to-hand combat'},
+  {w:'Betray',d:'To be disloyal to; to reveal a secret unintentionally'},
+  {w:'Biography',d:'An account of someone\'s life written by someone else'},
+  {w:'Bizarre',d:'Very strange or unusual'},
+  {w:'Breakthrough',d:'A sudden, dramatic, and important discovery or development'},
+  {w:'Broccoli',d:'A vegetable of the cabbage family with dense green flower heads'},
+  {w:'Catalog',d:'A complete list of items in systematic order'},
+  {w:'Center',d:'A point equidistant from all points on the boundary of a figure'},
+  {w:'Chicken',d:'A common farm bird raised for eggs and meat'},
+  {w:'Chronic',d:'Persisting for a long time or constantly recurring'},
+  {w:'Church',d:'A building for Christian religious worship'},
+  {w:'Congratulate',d:'To give someone good wishes upon a special occasion'},
+  {w:'Cooking',d:'The practice or skill of preparing food by heating it'},
+  {w:'Curious',d:'Eager to know or learn; strange or unusual'},
+  {w:'Damage',d:'Physical harm that impairs the value or usefulness of something'},
+  {w:'Debris',d:'Scattered fragments of something wrecked or destroyed'},
+  {w:'Diesel',d:'A type of petroleum fuel used in heavy vehicles'},
+  {w:'Dilate',d:'To make or become wider, larger, or more open'},
+  {w:'Dolphin',d:'A small gregarious toothed whale that lives in schools'},
+  {w:'Enact',d:'To make a bill into law'},
+  {w:'Excellent',d:'Extremely good; outstanding'},
+  {w:'Familiar',d:'Well known from long or close association'},
+  {w:'Firefighter',d:'A person whose job is to extinguish fires'},
+  {w:'Flavor',d:'The distinctive taste of a food or drink'},
+  {w:'Formidable',d:'Inspiring fear or respect; impressively large or capable'},
+  {w:'Frolic',d:'To play and move about cheerfully'},
+  {w:'Furious',d:'Extremely angry; very intense'},
+  {w:'Gallant',d:'Brave, heroic, and courteous'},
+  {w:'Gradual',d:'Taking place or progressing slowly over time'},
+  {w:'Guideline',d:'A general rule, principle, or piece of advice'},
+  {w:'Harbor',d:'A sheltered body of water where ships anchor; to keep in mind'},
+  {w:'Heresy',d:'Belief or opinion contrary to orthodox religious doctrine'},
+  {w:'Immobilize',d:'To prevent from moving or operating as normal'},
+  {w:'Integrity',d:'The quality of being honest and having strong moral principles'},
+  {w:'Ionize',d:'To convert into ions; to become electrically charged'},
+  {w:'Lactose',d:'A sugar present in milk'},
+  {w:'Lather',d:'A frothy mass of bubbles produced by soap or detergent'},
+  {w:'Leafy',d:'Having many leaves; resembling or covered with leaves'},
+  {w:'Liable',d:'Responsible by law; likely to experience something'},
+  {w:'Lightning',d:'A natural electrical discharge producing a bright flash of light'},
+  {w:'Magnificent',d:'Impressively beautiful, elaborate, or extravagant; grand'},
+  {w:'Meditate',d:'To focus one\'s mind for a period, as a spiritual exercise'},
+  {w:'Normal',d:'Conforming to a standard; usual, typical, or expected'},
+  {w:'Oasis',d:'A fertile spot in a desert where water is found'},
+  {w:'Obesity',d:'The condition of being grossly overweight'},
+  {w:'Offender',d:'A person who commits an illegal act'},
+  {w:'Overdue',d:'Not having arrived or been done by the expected time'},
+  {w:'Paradox',d:'A seemingly absurd statement that may prove to be true'},
+  {w:'Password',d:'A secret word or phrase that must be used to gain admission'},
+  {w:'Pigeon',d:'A stout bird with a small head and a cooing call'},
+  {w:'Plethora',d:'A large or excessive amount of something'},
+  {w:'Powder',d:'Fine, dry particles; a cosmetic applied to the skin'},
+  {w:'Present',d:'In a particular place; existing or occurring now; a gift'},
+  {w:'Probably',d:'Almost certainly; as far as one knows or can tell'},
+  {w:'Pulsar',d:'A celestial object emitting regular pulses of radio waves'},
+  {w:'Pumpkin',d:'A large rounded orange-yellow fruit used as food'},
+  {w:'Pursuit',d:'The action of following someone; a hobby or activity'},
+  {w:'Recipient',d:'A person who receives something'},
+  {w:'Refrain',d:'To stop oneself from doing something; repeated part of a song'},
+  {w:'Refugee',d:'A person forced to leave their country to escape war or disaster'},
+  {w:'Remarkable',d:'Worthy of attention; extraordinary'},
+  {w:'Rye',d:'A cereal grain used in bread-making and distilling whisky'},
+  {w:'Scrutiny',d:'Critical observation or examination'},
+  {w:'Secret',d:'Something kept hidden or known only to a few people'},
+  {w:'Seldom',d:'Not often; rarely'},
+  {w:'Semicircle',d:'Half of a circle'},
+  {w:'Sigma',d:'The eighteenth letter of the Greek alphabet; a statistical symbol'},
+  {w:'Sleigh',d:'A sled on runners pulled by horses or reindeer over snow'},
+  {w:'Sniffle',d:'To sniff repeatedly due to a cold or crying'},
+  {w:'Special',d:'Better, greater, or otherwise different from what is usual'},
+  {w:'Spooky',d:'Frightening; eerily strange'},
+  {w:'Strategic',d:'Relating to the identification of long-term aims and means to achieve them'},
+  {w:'Subsidy',d:'A sum of money granted to assist an industry or business'},
+  {w:'Swamp',d:'An area of low-lying ground flooded with water'},
+  {w:'Syntax',d:'The arrangement of words to create well-formed sentences'},
+  {w:'Tangerine',d:'A small orange-coloured citrus fruit'},
+  {w:'Telepathy',d:'Supposed communication of thoughts by means other than the known senses'},
+  {w:'Thesis',d:'A statement put forward as a premise to be maintained or proved'},
+  {w:'Tremendous',d:'Very great in amount, scale, or intensity; very good'},
+  {w:'Twenty',d:'The number equivalent to the product of two and ten; 20'},
+  {w:'Uncomfortable',d:'Causing or feeling slight pain or physical discomfort'},
+  {w:'Understand',d:'To perceive the intended meaning of; to be sympathetically aware'},
+  {w:'Vague',d:'Of uncertain, indefinite, or unclear character or meaning'},
+  {w:'Villain',d:'A character whose evil actions drive a plot'},
+  {w:'Voluntary',d:'Done or given of one\'s own free will'},
+  {w:'Walnut',d:'An edible nut with a wrinkled two-lobed kernel in a hard shell'},
+  {w:'Warrior',d:'A brave or experienced soldier or fighter'},
+  {w:'Window',d:'An opening in a wall or roof to admit light and air'},
+  {w:'Zombie',d:'A fictional undead being; a person acting in a mindless way'},
+],
+
+advanced: [
+  {w:'Abditive',d:'Having the quality of hiding or concealing'},
+  {w:'Abdomen',d:'The part of the body containing the digestive organs'},
+  {w:'Abhorrent',d:'Inspiring disgust and loathing; repugnant'},
+  {w:'Abscond',d:'To leave hurriedly and secretly, typically to escape consequences'},
+  {w:'Accomplishment',d:'Something that has been achieved successfully'},
+  {w:'Accommodate',d:'To provide lodging or space for; to fit in with the wishes of'},
+  {w:'Accumulation',d:'The process of gradually gathering something over time'},
+  {w:'Adolescent',d:'Relating to the period between childhood and adulthood'},
+  {w:'Adversity',d:'Difficult conditions or misfortune'},
+  {w:'Aegis',d:'The protection, backing, or support of a particular person or organisation'},
+  {w:'Aerodynamic',d:'Designed to reduce drag from air; relating to aerodynamics'},
+  {w:'Agriculture',d:'The science or practice of farming'},
+  {w:'Apostrophe',d:'A punctuation mark used for possession or contraction'},
+  {w:'Articulate',d:'Having the ability to speak fluently and coherently'},
+  {w:'Aspiration',d:'A hope or ambition of achieving something'},
+  {w:'Assumption',d:'A thing accepted as true without proof'},
+  {w:'Asthma',d:'A respiratory condition marked by spasms in the bronchi'},
+  {w:'Asunder',d:'Apart; into pieces'},
+  {w:'Atmospheric',d:'Relating to the atmosphere; creating a mood or feeling'},
+  {w:'Beneficiary',d:'A person who benefits from something, especially a will'},
+  {w:'Benevolence',d:'The quality of being well-meaning and kindly'},
+  {w:'Blizzard',d:'A severe snowstorm with high winds and low visibility'},
+  {w:'Bronchitis',d:'Inflammation of the bronchial tubes causing coughing'},
+  {w:'Brusque',d:'Abrupt or offhand in manner or speech'},
+  {w:'Calibration',d:'The action of calibrating an instrument or process'},
+  {w:'Candlelight',d:'The soft flickering light produced by a candle'},
+  {w:'Caustic',d:'Able to burn organic tissue; sarcastic in speech or writing'},
+  {w:'Champagne',d:'A sparkling white wine from the Champagne region of France'},
+  {w:'Charisma',d:'Compelling attractiveness or charm that inspires devotion in others'},
+  {w:'Chlorophyll',d:'The green pigment in plants responsible for light absorption in photosynthesis'},
+  {w:'Christmas',d:'The annual Christian festival celebrating Jesus\'s birth on 25 December'},
+  {w:'Cognitive',d:'Relating to the mental processes of perception and reasoning'},
+  {w:'Colonel',d:'A rank of officer in the army, above lieutenant colonel'},
+  {w:'Combustible',d:'Able to catch fire and burn easily'},
+  {w:'Commodity',d:'A raw material or product that can be bought and sold'},
+  {w:'Concentration',d:'The action of focusing one\'s attention on something'},
+  {w:'Consumption',d:'The using up of a resource; the amount consumed'},
+  {w:'Contour',d:'An outline representing the shape of something'},
+  {w:'Controversial',d:'Giving rise to public disagreement'},
+  {w:'Cuisine',d:'A style or method of cooking, especially of a particular country'},
+  {w:'Dauntless',d:'Showing fearlessness and determination'},
+  {w:'Deployment',d:'The action of bringing resources into effective action'},
+  {w:'Derogatory',d:'Showing a critical or disrespectful attitude'},
+  {w:'Detrimental',d:'Tending to cause harm or damage'},
+  {w:'Diplomatic',d:'Relating to diplomacy; having skill in handling sensitive matters'},
+  {w:'Disappointment',d:'Sadness caused by the non-fulfilment of one\'s hopes'},
+  {w:'Disconsolate',d:'Very unhappy and unable to be comforted'},
+  {w:'Division',d:'The action of separating something into parts'},
+  {w:'Doctrine',d:'A belief or set of beliefs held and taught by a group'},
+  {w:'Elaborate',d:'Involving many carefully arranged parts; detailed and complicated'},
+  {w:'Embarrassment',d:'A feeling of self-consciousness, shame, or awkwardness'},
+  {w:'Embassy',d:'The official residence or offices of an ambassador'},
+  {w:'Enchantment',d:'A feeling of great pleasure and delight; magic'},
+  {w:'Encore',d:'A repeated or additional performance at the end of a concert'},
+  {w:'Endeavor',d:'An attempt to achieve a goal; to try hard to do something'},
+  {w:'Epiphany',d:'A moment of sudden revelation or insight'},
+  {w:'Epsilon',d:'The fifth letter of the Greek alphabet'},
+  {w:'Erratic',d:'Not even or regular in pattern or movement; unpredictable'},
+  {w:'Euphoria',d:'A feeling of intense happiness and self-confidence'},
+  {w:'Exaggerate',d:'To represent something as greater than it really is'},
+  {w:'Excalibur',d:'The legendary sword of King Arthur'},
+  {w:'Exorcism',d:'The expulsion of a supposed evil spirit from a person or place'},
+  {w:'Expenditure',d:'The action of spending funds; an amount of money spent'},
+  {w:'Exponential',d:'Increasing more and more rapidly'},
+  {w:'Extravagant',d:'Lacking restraint in spending; exceeding what is reasonable'},
+  {w:'Fantasy',d:'The faculty of imagining impossible things; a genre of fiction'},
+  {w:'Favorable',d:'Expressing approval; advantageous'},
+  {w:'Featherweight',d:'The lightest boxing category; a very light person or thing'},
+  {w:'Fictitious',d:'Not real; invented for the purposes of deception or fiction'},
+  {w:'Fjord',d:'A long, narrow, deep inlet of the sea between high cliffs'},
+  {w:'Flamboyant',d:'Tending to attract attention because of exuberance and style'},
+  {w:'Fluorescent',d:'Having the property of emitting light when absorbing radiation'},
+  {w:'Forthcoming',d:'About to happen or appear; willing to divulge information'},
+  {w:'Frostbite',d:'Injury to body tissue caused by exposure to extreme cold'},
+  {w:'Fruition',d:'The realisation of a plan or project; the state of bearing fruit'},
+  {w:'Gastronomic',d:'Relating to the art of choosing, cooking, and eating good food'},
+  {w:'Gazebo',d:'A roofed structure with open sides for outdoor use'},
+  {w:'Gibberish',d:'Rapid, unintelligible talk or writing; nonsense'},
+  {w:'Gingerbread',d:'A cake or biscuit made with ginger and treacle'},
+  {w:'Glacier',d:'A slowly moving mass of ice formed from accumulated snow'},
+  {w:'Gratitude',d:'The quality of being thankful; readiness to show appreciation'},
+  {w:'Gravestone',d:'A stone slab marking the site of a grave'},
+  {w:'Hailstone',d:'A pellet of hail; a small ball of ice falling from the sky'},
+  {w:'Heritage',d:'Property or traditions passed down from previous generations'},
+  {w:'Hexagonal',d:'Having six angles and six sides'},
+  {w:'Hibernation',d:'The condition or period of an animal spending winter in a dormant state'},
+  {w:'Hornswoggle',d:'To deceive or trick someone'},
+  {w:'Hourglass',d:'A device for measuring time, using sand flowing between two glass chambers'},
+  {w:'Humanitarian',d:'Concerned with or seeking to promote human welfare'},
+  {w:'Hypothesis',d:'A proposed explanation based on limited evidence'},
+  {w:'Ideological',d:'Relating to or concerned with ideology'},
+  {w:'Idiom',d:'A group of words whose meaning is different from the literal meanings'},
+  {w:'Imminent',d:'About to happen very soon'},
+  {w:'Imprisonment',d:'The state of being kept in prison; the sentence of confinement'},
+  {w:'Independence',d:'The fact or state of being independent'},
+  {w:'Indifference',d:'Lack of interest, concern, or sympathy'},
+  {w:'Inhabitant',d:'A person or animal that lives in or occupies a place'},
+  {w:'Insinuate',d:'To suggest something in an indirect and unpleasant way'},
+  {w:'Intermediate',d:'Coming between two things in time, place, or degree'},
+  {w:'Intermission',d:'A pause or break, especially between parts of a performance'},
+  {w:'Jaded',d:'Bored or lacking enthusiasm after having too much of something'},
+  {w:'Juxtaposition',d:'Two things placed close together with contrasting effect'},
+  {w:'Kangaroo',d:'A large Australian marsupial with powerful hind legs for leaping'},
+  {w:'Languid',d:'Having or showing a disinclination for physical exertion'},
+  {w:'Legendary',d:'Of or based on legends; remarkable enough to be famous'},
+  {w:'Limousine',d:'A large, luxurious car, especially one with a partition behind the driver'},
+  {w:'Livery',d:'A uniform worn by servants or officials; the colours of a sports team'},
+  {w:'Mathematician',d:'An expert in or student of mathematics'},
+  {w:'Melancholy',d:'A feeling of pensive sadness with no obvious cause'},
+  {w:'Metabolism',d:'The chemical processes in a living organism that maintain life'},
+  {w:'Methodology',d:'A system of methods used in a particular area of study'},
+  {w:'Microorganism',d:'A microscopic organism such as a bacterium or virus'},
+  {w:'Misconception',d:'A false or mistaken view or opinion'},
+  {w:'Mistletoe',d:'A parasitic plant used as a Christmas decoration'},
+  {w:'Multiplication',d:'The process of adding a number to itself a specified number of times'},
+  {w:'Myopic',d:'Short-sighted; lacking imagination or foresight'},
+  {w:'Nebulous',d:'In the form of a cloud; vague and indistinct'},
+  {w:'Necromancer',d:'A person who claims to communicate with the dead; a sorcerer'},
+  {w:'Negotiation',d:'Discussion aimed at reaching an agreement'},
+  {w:'Neighboring',d:'Adjacent to or near something'},
+  {w:'Nonplussed',d:'Surprised and confused so much that one is unsure how to react'},
+  {w:'Notorious',d:'Famous or well known, typically for some bad quality or deed'},
+  {w:'Obituary',d:'A notice of a death, typically including a brief biography'},
+  {w:'Oblivious',d:'Not aware of or not concerned about what is happening around one'},
+  {w:'Opaque',d:'Not able to be seen through; hard or impossible to understand'},
+  {w:'Optimism',d:'Hopefulness and confidence about the future'},
+  {w:'Palatine',d:'Relating to a palace; having royal authority'},
+  {w:'Pantograph',d:'A mechanical device for copying drawings; an electrical conductor for trains'},
+  {w:'Parallel',d:'Extending in the same direction, equidistant at all points'},
+  {w:'Participation',d:'The action of taking part in something'},
+  {w:'Passionate',d:'Having or caused by strong feelings or belief'},
+  {w:'Peppermint',d:'A plant of the mint family producing a strong pungent oil'},
+  {w:'Periodically',d:'At intervals; from time to time'},
+  {w:'Personnel',d:'People employed in an organisation or undertaking'},
+  {w:'Pestilence',d:'A fatal epidemic disease, especially bubonic plague'},
+  {w:'Photographer',d:'A person who takes photographs, especially professionally'},
+  {w:'Pomegranate',d:'A round fruit with tough orange-red skin and sweet red flesh'},
+  {w:'Portfolio',d:'A large flat case for loose documents; a range of investments'},
+  {w:'Practitioner',d:'A person actively engaged in a profession'},
+  {w:'Predominantly',d:'Mainly; for the most part'},
+  {w:'Problematic',d:'Constituting or presenting a problem or difficulty'},
+  {w:'Proclamation',d:'A public or official announcement of importance'},
+  {w:'Procrastinate',d:'To delay or postpone action; to put things off'},
+  {w:'Pronunciation',d:'The way in which a word is pronounced'},
+  {w:'Propaganda',d:'Information used to promote a particular political cause'},
+  {w:'Protocol',d:'The official procedure governing affairs of state or diplomacy'},
+  {w:'Pygmy',d:'A member of certain peoples of very short stature; a very small person or thing'},
+  {w:'Ravenous',d:'Extremely hungry; voracious'},
+  {w:'Recession',d:'A period of temporary economic decline'},
+  {w:'Reincarnation',d:'The rebirth of a soul in a new body'},
+  {w:'Reliability',d:'The quality of being trustworthy and performing consistently well'},
+  {w:'Residential',d:'Designed for or occupied by private houses'},
+  {w:'Resilience',d:'The capacity to recover quickly from difficulties'},
+  {w:'Resurrection',d:'The act of rising from the dead; a revival'},
+  {w:'Revelation',d:'A surprising and previously unknown fact that is made known'},
+  {w:'Rhythm',d:'A strong, regular, repeated pattern of sound or movement'},
+  {w:'Ricochet',d:'A bullet or other projectile rebounding off a surface'},
+  {w:'Sabotage',d:'Deliberately destroy or damage something to obstruct an enemy'},
+  {w:'Sachet',d:'A small sealed bag containing a product'},
+  {w:'Sapphire',d:'A transparent precious stone, typically blue'},
+  {w:'Scholarship',d:'Academic study or achievement; a grant to support study'},
+  {w:'Sentimental',d:'Of or prompted by feelings of tenderness, sadness, or nostalgia'},
+  {w:'Separation',d:'The action or state of being moved or kept apart'},
+  {w:'Shareholder',d:'An owner of shares in a company'},
+  {w:'Significance',d:'The quality of being worthy of attention; importance'},
+  {w:'Skeleton',d:'The internal framework of bones supporting the body'},
+  {w:'Snowflake',d:'A flake of snow; a single ice crystal that falls as snow'},
+  {w:'Solidarity',d:'Unity or agreement of feeling or action among individuals'},
+  {w:'Spokesperson',d:'A person who makes statements on behalf of a group'},
+  {w:'Steadfast',d:'Resolutely or dutifully firm and unwavering'},
+  {w:'Stereotype',d:'A widely held but oversimplified image or idea of a person or thing'},
+  {w:'Supposedly',d:'According to what is generally assumed or believed'},
+  {w:'Surrogate',d:'A substitute, especially a person deputising for another'},
+  {w:'Surveillance',d:'Close observation, especially of a suspected person'},
+  {w:'Susceptible',d:'Likely or liable to be influenced or harmed by something'},
+  {w:'Syllable',d:'A unit of pronunciation with one vowel sound'},
+  {w:'Symmetrical',d:'Made up of exactly similar parts facing each other or an axis'},
+  {w:'Systematic',d:'Done according to a fixed plan or system; methodical'},
+  {w:'Technological',d:'Relating to or using technology'},
+  {w:'Thesaurus',d:'A book listing words grouped by similar meanings'},
+  {w:'Transaction',d:'An instance of buying or selling; a business deal'},
+  {w:'Translucent',d:'Allowing light to pass through diffusely; semi-transparent'},
+  {w:'Transparency',d:'The condition of being transparent; openness'},
+  {w:'Transportation',d:'The action of transporting; a means of conveying people or goods'},
+  {w:'Unprecedented',d:'Never done or known before'},
+  {w:'Validity',d:'The quality of being logically or factually sound'},
+  {w:'Venerate',d:'To regard with great respect; to revere'},
+  {w:'Violation',d:'The action of breaking a rule or law'},
+  {w:'Vulnerability',d:'The quality of being exposed to the possibility of harm'},
+  {w:'Wednesday',d:'The day of the week before Thursday and after Tuesday'},
+  {w:'Wholeheartedly',d:'With complete sincerity and commitment'},
+  {w:'Worthwhile',d:'Worth the time, money, or effort spent'},
+],
+
+expert: [
+  {w:'Abacaxi',d:'A type of pineapple native to Brazil with juicy, flavourful flesh'},
+  {w:'Abasia',d:'Inability to walk due to impaired muscular coordination'},
+  {w:'Acculturate',d:'To assimilate to a different culture'},
+  {w:'Aforementioned',d:'Denoting something previously mentioned'},
+  {w:'Aggrandize',d:'To increase the power, status, or wealth of someone'},
+  {w:'Agoraphobia',d:'An extreme or irrational fear of open or public places'},
+  {w:'Agoraphobic',d:'Relating to an extreme irrational fear of open or public places'},
+  {w:'Ambidextrous',d:'Able to use the right and left hands equally well'},
+  {w:'Ambiguous',d:'Open to more than one interpretation'},
+  {w:'Anaphylactic',d:'Relating to anaphylaxis, an extreme and potentially lethal allergic reaction'},
+  {w:'Anemone',d:'A plant of the buttercup family with brightly coloured flowers'},
+  {w:'Anisosquaric',d:'Relating to an organic acid used in chemistry research'},
+  {w:'Apocryphal',d:'Of doubtful authenticity, although widely circulated as being true'},
+  {w:'Apothecary',d:'A person who prepared and sold medicines; an old-fashioned pharmacist'},
+  {w:'Asphyxiation',d:'The state of being deprived of oxygen, causing unconsciousness or death'},
+  {w:'Astigmatism',d:'A defect in the eye causing distorted or blurred vision'},
+  {w:'Ataraxy',d:'A state of serene calmness and freedom from anxiety'},
+  {w:'Attorney',d:'A lawyer, especially one representing a client in court'},
+  {w:'Bandeau',d:'A narrow band worn around the head; a strapless top style'},
+  {w:'Belvedere',d:'A structure designed to command a fine view; a watchtower'},
+  {w:'Betwixt',d:'In or between two positions; an archaic word for between'},
+  {w:'Blatherskite',d:'A person who talks at length without making much sense'},
+  {w:'Bodacious',d:'Admirably bold or impressive; excellent'},
+  {w:'Bogolanfini',d:'A traditional Malian cloth made by hand using fermented mud as dye'},
+  {w:'Brucellosis',d:'A bacterial disease affecting cattle, pigs, and dogs that can spread to humans'},
+  {w:'Bucolic',d:'Relating to the pleasant aspects of the countryside and rural life'},
+  {w:'Cacophony',d:'A harsh, discordant mixture of sounds'},
+  {w:'Calamitous',d:'Involving calamity; catastrophic or disastrous'},
+  {w:'Calumny',d:'The making of false and defamatory statements about someone'},
+  {w:'Capoeira',d:'A Brazilian martial art combining elements of dance, acrobatics, and music'},
+  {w:'Capricious',d:'Given to sudden and unaccountable changes of mood or behaviour'},
+  {w:'Captious',d:'Too ready to find fault; too critical'},
+  {w:'Cerulean',d:'A deep sky-blue colour'},
+  {w:'Charcuterie',d:'Cold cooked meats collectively; a shop selling these products'},
+  {w:'Chauffeur',d:'A person employed to drive a private or hired car'},
+  {w:'Chronological',d:'Arranged in the order in which events occurred'},
+  {w:'Cinematographer',d:'The person responsible for filming a movie'},
+  {w:'Clandestine',d:'Kept secret or done secretly'},
+  {w:'Coalescence',d:'The process of coming together to form one mass or whole'},
+  {w:'Codicil',d:'An addition or supplement that explains, modifies, or revokes a will'},
+  {w:'Colloquialism',d:'A word or phrase used in ordinary conversation rather than formal speech'},
+  {w:'Comeuppance',d:'A punishment or fate that someone deserves'},
+  {w:'Commodore',d:'A naval rank above captain; the president of a yacht club'},
+  {w:'Compunction',d:'Anxiety or guilt about something done or about to be done'},
+  {w:'Consanguine',d:'Of the same blood or origin; related by birth'},
+  {w:'Consummate',d:'Highly skilled or accomplished; to make a marriage complete'},
+  {w:'Contradistinguish',d:'To distinguish by contrast; to differentiate two things by pointing out opposite qualities'},
+  {w:'Correspondence',d:'Letters sent or received; a close similarity or connection'},
+  {w:'Counterintuitive',d:'Contrary to intuition or common sense'},
+  {w:'Culvert',d:'A tunnel carrying a stream or open drain under a road'},
+  {w:'Cyrillic',d:'The alphabet used by many Slavic peoples, including Russians'},
+  {w:'Defenestration',d:'The action of throwing someone out of a window'},
+  {w:'Deleterious',d:'Causing harm or damage'},
+  {w:'Depilatory',d:'Used to remove unwanted hair; a substance used for this purpose'},
+  {w:'Diminution',d:'A reduction in the size, extent, or importance of something'},
+  {w:'Discombobulate',d:'To disconcert or confuse; to upset'},
+  {w:'Dodecahedron',d:'A three-dimensional shape having twelve plane faces'},
+  {w:'Eloquent',d:'Fluent or persuasive in speaking or writing'},
+  {w:'Elysian',d:'Relating to Elysium; blissful, divinely inspired'},
+  {w:'Epitome',d:'A person or thing that is a perfect example of a quality or type'},
+  {w:'Ethnomethodology',d:'A sociological method examining practical reasoning used to construct meaning in everyday life'},
+  {w:'Extraterrestrial',d:'Originating or existing beyond the Earth'},
+  {w:'Facsimile',d:'An exact copy, especially of written or printed material; a fax'},
+  {w:'Fastidious',d:'Very attentive to accuracy and detail; hard to please'},
+  {w:'Fissiparous',d:'Inclined to cause or undergo division; tending to break up'},
+  {w:'Flummox',d:'To confuse or bewilder someone'},
+  {w:'Fuchsia',d:'A bright pink or purplish-red colour; a tropical shrub with drooping flowers'},
+  {w:'Garrulous',d:'Excessively talkative, especially on trivial subjects'},
+  {w:'Gentrification',d:'The process whereby the character of a poor urban area changes as wealthier people move in'},
+  {w:'Glaucomatous',d:'Relating to or affected by glaucoma, a condition of increased eye pressure'},
+  {w:'Glockenspiel',d:'A musical instrument with tuned metal pieces played with small hammers'},
+  {w:'Gobbledygook',d:'Language that is meaningless or difficult to understand'},
+  {w:'Grandiloquent',d:'Using pompous or extravagant language'},
+  {w:'Handkerchief',d:'A square of cloth used for wiping the nose or face'},
+  {w:'Harpsichord',d:'A keyboard instrument with horizontal strings plucked by quills'},
+  {w:'Hemoglobin',d:'A protein in red blood cells that carries oxygen'},
+  {w:'Heterozygous',d:'Having two different alleles of a gene'},
+  {w:'Hierarchy',d:'A system in which members are ranked according to relative status or authority'},
+  {w:'Homeopathy',d:'A system of complementary medicine using highly diluted substances'},
+  {w:'Homogeneous',d:'Of the same kind; alike; uniform in structure'},
+  {w:'Horticulturist',d:'An expert or practitioner of horticulture'},
+  {w:'Hypermetropia',d:'Long-sightedness; difficulty focusing on nearby objects'},
+  {w:'Iconoclast',d:'A person who attacks cherished beliefs or institutions'},
+  {w:'Incandescent',d:'Emitting light as a result of being heated; full of strong emotion'},
+  {w:'Inchoate',d:'Just begun and not fully formed or developed; rudimentary'},
+  {w:'Incoagulable',d:'Not capable of coagulating or clotting'},
+  {w:'Indefatigable',d:'Persisting tirelessly; incapable of being fatigued'},
+  {w:'Ingenious',d:'Clever, original, and inventive'},
+  {w:'Irascible',d:'Having or showing a tendency to be easily angered'},
+  {w:'Isometropia',d:'Equality in the refractive power of the two eyes'},
+  {w:'Isthmus',d:'A narrow strip of land with sea on either side, linking two larger areas'},
+  {w:'Kaleidoscope',d:'A tube reflecting images of coloured glass into symmetrical patterns; a complex situation'},
+  {w:'Latitudinarianism',d:'The belief in tolerating differences of opinion, especially in religion'},
+  {w:'Legislation',d:'Laws considered collectively; the process of making laws'},
+  {w:'Lexicography',d:'The theory and practice of compiling dictionaries'},
+  {w:'Liaison',d:'Communication that facilitates a close working relationship between people or organisations'},
+  {w:'Loquacious',d:'Tending to talk a great deal; talkative'},
+  {w:'Lugubrious',d:'Looking or sounding sad and dismal'},
+  {w:'Lymphangiography',d:'Imaging of lymphatic vessels using injected contrast dye'},
+  {w:'Macabre',d:'Disturbing and concerned with or causing a feeling about death'},
+  {w:'Magniloquent',d:'Using high-flown or bombastic language'},
+  {w:'Malapropism',d:'The mistaken use of a word in place of a similar-sounding one'},
+  {w:'Martyrdom',d:'The death or suffering of a martyr; a great cause of suffering'},
+  {w:'Mellifluous',d:'Sweet or musical; pleasant to hear'},
+  {w:'Menagerie',d:'A collection of wild animals kept in captivity for exhibition'},
+  {w:'Meretricious',d:'Apparently attractive but having in reality no value or integrity'},
+  {w:'Microminiaturisation',d:'The process of making electronic components extremely small'},
+  {w:'Milieu',d:'A person\'s social environment and surroundings'},
+  {w:'Miniscule',d:'Variant spelling of minuscule; extremely small'},
+  {w:'Miscellaneous',d:'Consisting of various types of things that are not connected'},
+  {w:'Monochromatic',d:'Containing or using only one colour'},
+  {w:'Monosyllabic',d:'Consisting of one syllable; not communicative'},
+  {w:'Multidimensionality',d:'The quality of having multiple dimensions or aspects'},
+  {w:'Municipal',d:'Relating to a town or district with local self-government'},
+  {w:'Myriad',d:'A countless or extremely great number; innumerable'},
+  {w:'Narcissistic',d:'Having an excessive interest in or admiration of oneself'},
+  {w:'Nauseous',d:'Affected with nausea; causing nausea'},
+  {w:'Neuroplasticity',d:'The ability of the brain to form and reorganise synaptic connections'},
+  {w:'Nocturne',d:'A musical composition inspired by the night; a painting of night scenes'},
+  {w:'Nomenclature',d:'The system of names used in a particular field'},
+  {w:'Nutritious',d:'Nourishing; efficient as food; containing many nutrients'},
+  {w:'Obfuscation',d:'The action of making something obscure or unintelligible'},
+  {w:'Onomatopoeia',d:'The formation of a word from a sound associated with what is named'},
+  {w:'Paradigm',d:'A typical example or pattern of something; a model'},
+  {w:'Parliamentary',d:'Relating to, enacted by, or suitable for a parliament'},
+  {w:'Paroxysm',d:'A sudden attack or violent expression of emotion or activity'},
+  {w:'Pecuniary',d:'Relating to or consisting of money'},
+  {w:'Pernicious',d:'Having a harmful effect, especially in a gradual way'},
+  {w:'Pessimistic',d:'Tending to see the worst aspect of things; lacking hope'},
+  {w:'Phantasmagoria',d:'A sequence of real or imaginary images like those in a dream'},
+  {w:'Pharaoh',d:'A ruler in ancient Egypt'},
+  {w:'Phenomenon',d:'A fact or situation that is observed to exist or happen'},
+  {w:'Phlegm',d:'The thick mucus secreted by the mucous membranes of the respiratory passages'},
+  {w:'Photogeochemistry',d:'The study of chemical reactions driven by light in geological contexts'},
+  {w:'Pirouette',d:'An act of spinning on one foot, typically in ballet'},
+  {w:'Pneumatic',d:'Containing or operated by air or gas under pressure'},
+  {w:'Polemic',d:'A strong verbal or written attack on someone or something'},
+  {w:'Polychromatic',d:'Having or exhibiting many colours'},
+  {w:'Polydactyly',d:'The condition of having more than the normal number of fingers or toes'},
+  {w:'Predecessor',d:'A person who held a job or office before the current holder'},
+  {w:'Prestigious',d:'Inspiring respect and admiration; having high status'},
+  {w:'Psychological',d:'Of, affecting, or arising in the mind'},
+  {w:'Puerile',d:'Childishly silly and trivial'},
+  {w:'Pugnacious',d:'Eager or quick to argue, quarrel, or fight'},
+  {w:'Querimony',d:'A complaint; the habit of making complaints'},
+  {w:'Quixotry',d:'Romantic and idealistic but impractical thinking or behaviour'},
+  {w:'Radiometeorograph',d:'An instrument transmitting meteorological measurements by radio from an elevated position'},
+  {w:'Rambunctious',d:'Uncontrollably exuberant; boisterous'},
+  {w:'Rehabilitation',d:'Restoring someone to health or normal life through training and therapy'},
+  {w:'Reminiscence',d:'A story about a past event remembered by the narrator'},
+  {w:'Rendezvous',d:'A meeting at an agreed time and place'},
+  {w:'Sagacious',d:'Having or showing keen mental discernment and good judgement'},
+  {w:'Sanguine',d:'Optimistic or positive, especially in a difficult situation'},
+  {w:'Sarcophagus',d:'A stone coffin, typically adorned with sculpture or inscription'},
+  {w:'Scintillate',d:'To emit flashes of light; to be brilliant or witty'},
+  {w:'Semaphore',d:'A system of signalling using flags or lights; a type of railway signal'},
+  {w:'Sententiously',d:'In a way that is excessively moralising or pompous'},
+  {w:'Sequacious',d:'Deficient in originality; following without questioning'},
+  {w:'Sequoia',d:'A giant redwood tree of California'},
+  {w:'Silhouette',d:'The dark shape and outline of someone visible against a lighter background'},
+  {w:'Simultaneous',d:'Occurring at the same time'},
+  {w:'Soliloquy',d:'An act of speaking one\'s thoughts aloud when alone'},
+  {w:'Sovereignty',d:'Supreme power or authority; a self-governing state'},
+  {w:'Subpoena',d:'A writ ordering a person to attend a court'},
+  {w:'Subterranean',d:'Existing or occurring under the earth\'s surface'},
+  {w:'Supercentenarian',d:'A person who has reached the age of 110 or older'},
+  {w:'Supersede',d:'To take the place of something previously held'},
+  {w:'Syllepsis',d:'A figure of speech where a word applies to two others in different senses'},
+  {w:'Symbiosis',d:'Interaction between two different organisms living in close physical association'},
+  {w:'Syzygy',d:'A conjunction or opposition, especially of the moon with the sun'},
+  {w:'Tempestuous',d:'Very stormy; relating to a turbulent relationship or situation'},
+  {w:'Tetraphobia',d:'A strong fear or avoidance of the number four'},
+  {w:'Therapeutic',d:'Relating to the healing of disease; having a good effect on the body or mind'},
+  {w:'Thermionic',d:'Relating to the emission of electrons from hot bodies'},
+  {w:'Thermoluminescence',d:'Luminescence produced in a material by mild heating'},
+  {w:'Triphosphate',d:'A salt of triphosphoric acid, important in biochemical reactions'},
+  {w:'Ubiquitous',d:'Present, appearing, or found everywhere'},
+  {w:'Uncharacteristic',d:'Not typical of a particular person or thing'},
+  {w:'Unintelligible',d:'Impossible to understand'},
+  {w:'Verbatim',d:'In exactly the same words as were used originally'},
+  {w:'Vexatious',d:'Causing or tending to cause annoyance, frustration, or worry'},
+  {w:'Vignette',d:'A brief evocative description or account; a small ornamental design'},
+  {w:'Xenogeneic',d:'Derived from an organism of a different species'},
+  {w:'Zephyr',d:'A soft gentle breeze; a very light article of clothing'},
+  {w:'Zygote',d:'A fertilised egg; the diploid cell resulting from fusion of two gametes'},
+],
+
+genius: [
+  {w:'Abdominothoracic',d:'Relating to both the abdomen and thorax'},
+  {w:'Absquatulate',d:'To leave abruptly and secretly; to abscond'},
+  {w:'Acetaminophen',d:'A drug used to relieve pain and reduce fever; paracetamol'},
+  {w:'Achromatophil',d:'A cell or tissue that does not readily take up standard dye stains'},
+  {w:'Achromatophilia',d:'The property of not being easily stained by standard histological dyes'},
+  {w:'Acquiesce',d:'To accept something reluctantly but without protest'},
+  {w:'Allotransplantation',d:'Transplantation of an organ between genetically different individuals of the same species'},
+  {w:'Anachronistic',d:'Belonging to a period other than that in which it exists; outdated'},
+  {w:'Aneurysmorrhaphy',d:'Surgical repair of an aneurysm by suturing its walls'},
+  {w:'Antediluvian',d:'Belonging to the time before the biblical Flood; ridiculously old-fashioned'},
+  {w:'Arthroereisis',d:'An orthopaedic procedure to limit excessive joint hypermobility'},
+  {w:'Ascosporogenous',d:'Producing or bearing ascospores in a fungal reproductive structure'},
+  {w:'Autothaumaturgist',d:'A person who claims to perform miracles by their own power'},
+  {w:'Baccalaureate',d:'An examination taken in the final year of secondary school'},
+  {w:'Batrachophobia',d:'Irrational fear of frogs, toads, and other amphibians'},
+  {w:'Borborygmus',d:'A rumbling noise made by the movement of fluid and gas in the intestines'},
+  {w:'Bougainvillea',d:'A tropical climbing plant with brightly coloured papery bracts'},
+  {w:'Bourgeoisie',d:'The middle class, typically regarded as materialistic'},
+  {w:'Buckminsterfullerene',d:'A form of carbon whose molecule consists of 60 atoms arranged in a hollow sphere'},
+  {w:'Bureaucracy',d:'A system of government with decisions made by state officials rather than elected representatives'},
+  {w:'Chronopsychophysiology',d:'The study of time perception and its effects on physiology and psychology'},
+  {w:'Clinicoechocardiographic',d:'Relating to clinical and echocardiographic examination of the heart'},
+  {w:'Compartmentalization',d:'The division of something into separate sections or categories'},
+  {w:'Countermajoritarianism',d:'Opposition to the principle that majority rule should prevail'},
+  {w:'Craniosynostosis',d:'Premature fusion of the skull bones in infants'},
+  {w:'Cryptoendolithic',d:'Living within rocks in extreme environments'},
+  {w:'Dendrochronology',d:'The science of dating events by analysis of tree rings'},
+  {w:'Deoxyribonucleic',d:'Relating to DNA, the self-replicating material carrying genetic information'},
+  {w:'Dichotomization',d:'The action of dividing into two contrasting things'},
+  {w:'Eclaircissement',d:'An act of clearing up misunderstanding; clarification'},
+  {w:'Effervescent',d:'Giving off bubbles; vivacious and enthusiastic'},
+  {w:'Electrotelethermometer',d:'A device for measuring temperature at a remote location electronically'},
+  {w:'Entrepreneur',d:'A person who sets up a business, taking on financial risks'},
+  {w:'Ethnopsychopharmacology',d:'The study of how cultural factors influence drug use and effects'},
+  {w:'Flibbertigibbet',d:'A frivolous, flighty, or excessively talkative person'},
+  {w:'Fossiliferous',d:'Containing or characterised by fossils'},
+  {w:'Frontoethmoidectomy',d:'Surgical removal of ethmoid cells for sinus disease treatment'},
+  {w:'Gastroenterologist',d:'A medical specialist in disorders of the stomach and intestines'},
+  {w:'Geitonogamy',d:'Pollination of a flower by pollen from another flower on the same plant'},
+  {w:'Geochronostratigraphical',d:'Relating to the chronological classification of rock strata'},
+  {w:'Glyceraldehyde',d:'A triose monosaccharide; the simplest form of an aldose sugar, key in metabolic pathways'},
+  {w:'Goniosynechialysis',d:'A surgical procedure to release adhesions in the eye\'s drainage angle'},
+  {w:'Gubernatorial',d:'Relating to a governor, especially that of a US state'},
+  {w:'Hemispherectomy',d:'Surgical removal or disconnection of one cerebral hemisphere'},
+  {w:'Hieroglyphics',d:'The ancient Egyptian writing system using pictorial symbols'},
+  {w:'Hydrochlorofluorocarbon',d:'A compound of hydrogen, chlorine, fluorine, and carbon used as refrigerant'},
+  {w:'Hypercholesterolemia',d:'An abnormally high level of cholesterol in the blood'},
+  {w:'Hypergammaglobulinemia',d:'An abnormally high level of gamma globulin in the blood'},
+  {w:'Hypergonadotropic',d:'Relating to abnormally elevated levels of gonadotropin hormones'},
+  {w:'Hyperpolysyllabic',d:'Having an extremely large number of syllables'},
+  {w:'Hypoparathyroidism',d:'A deficiency of parathyroid hormone causing abnormally low blood calcium levels'},
+  {w:'Incomprehensibility',d:'The state of being impossible to understand'},
+  {w:'Infinitesimal',d:'Extremely small; an indefinitely small quantity'},
+  {w:'Infundibulum',d:'A funnel-shaped cavity or structure in the body'},
+  {w:'Institutionalization',d:'The process of establishing something as a convention in an organisation'},
+  {w:'Jurisprudence',d:'Legal philosophy; the theoretical study of law and its principles'},
+  {w:'Labyrinthine',d:'Resembling a labyrinth; intricate and confusing'},
+  {w:'Lepidopterology',d:'The branch of zoology dealing with butterflies and moths'},
+  {w:'Machiavellian',d:'Cunning and deceitful in achieving one\'s aims; after Machiavelli'},
+  {w:'Mechanotransduction',d:'The process by which cells convert mechanical stimuli into chemical signals'},
+  {w:'Methemoglobinemia',d:'A condition where hemoglobin cannot release oxygen to body tissues'},
+  {w:'Metonymic',d:'Relating to or characteristic of metonymy'},
+  {w:'Morphodifferentiation',d:'The process by which cells differentiate into specific morphological forms'},
+  {w:'Necrobiosislipoidica',d:'A skin condition associated with diabetes causing yellowish waxy patches'},
+  {w:'Neuroimmunomodulation',d:'The interaction between the nervous system and the immune system'},
+  {w:'Neuropsychological',d:'Relating to neuropsychology — the study of the relationship between the brain and behaviour'},
+  {w:'Oligonucleotide',d:'A short chain of nucleotides; widely used in genetic research and diagnostics'},
+  {w:'Orthogeosyncline',d:'A long narrow subsiding trough in the earth\'s crust'},
+  {w:'Panproctocolectomy',d:'The complete surgical removal of the colon and rectum'},
+  {w:'Parallelogrammatic',d:'Of or resembling the shape of a parallelogram'},
+  {w:'Paraphernalia',d:'Miscellaneous articles, especially equipment needed for an activity'},
+  {w:'Perspicacious',d:'Having a ready insight into things; shrewd'},
+  {w:'Photoreconnaissance',d:'Reconnaissance carried out by taking photographs from an aircraft or satellite'},
+  {w:'Plasmodiumfalciparum',d:'The most dangerous malaria-causing parasite transmitted by mosquitoes'},
+  {w:'Plenipotentiary',d:'A diplomat with full power to act on behalf of their government'},
+  {w:'Portmanteau',d:'A large trunk; a word blending sounds and meanings of two words'},
+  {w:'Prestidigitation',d:'The performance of tricks by the rapid movement of the hands; conjuring'},
+  {w:'Proceleusmatic',d:'Relating to a metrical foot of four short syllables'},
+  {w:'Prognostication',d:'A forecast of a future event; the action of prophesying'},
+  {w:'Pseudohyperaldosteronism',d:'A condition mimicking hyperaldosteronism with elevated blood pressure'},
+  {w:'Pseudoparallelodromous',d:'Having veins that appear parallel but diverge slightly'},
+  {w:'Pseudoriemannian',d:'Relating to a geometry extending Riemannian geometry with indefinite metric'},
+  {w:'Psychoneuroimmunology',d:'The study of the effect of the mind on health and interactions between the nervous and immune systems'},
+  {w:'Psychopharmacotherapy',d:'The use of psychiatric medications to treat mental health conditions'},
+  {w:'Psychotomimetic',d:'Relating to drugs that induce a state resembling psychosis'},
+  {w:'Pulchritudinous',d:'Beautiful; having great physical beauty'},
+  {w:'Pusillanimous',d:'Showing a lack of courage or determination; timid'},
+  {w:'Quasiautobiographical',d:'Partly autobiographical but not entirely based on real events'},
+  {w:'Quasquicentennial',d:'A 125th anniversary; a celebration of 125 years'},
+  {w:'Quindecasyllabic',d:'Having fifteen syllables'},
+  {w:'Quoddamodotative',d:'Of the nature of a limitation or qualification'},
+  {w:'Radioallergosorbent',d:'Relating to a test measuring levels of antibodies in the blood'},
+  {w:'Rhinorrhagia',d:'A nosebleed; haemorrhage from the nose'},
+  {w:'Serendipity',d:'The occurrence of fortunate events by chance in a happy way'},
+  {w:'Sesquipedalian',d:'Given to using long words; a long word'},
+  {w:'Spectrophotometer',d:'An instrument for measuring the intensity of light in different wavelengths'},
+  {w:'Subcompartmentalization',d:'Division into smaller compartments within existing compartments'},
+  {w:'Subdermatoglyphic',d:'Relating to the dermal ridges underlying fingerprint patterns'},
+  {w:'Supererogatory',d:'Going beyond the requirements of duty'},
+  {w:'Superferromagnetism',d:'A form of ferromagnetism exhibited by small particles of magnetic material'},
+  {w:'Susurration',d:'Whispering, murmuring, or rustling sounds'},
+  {w:'Temporomandibular',d:'Relating to the joint connecting the jawbone to the skull'},
+  {w:'Thalassophobia',d:'An intense fear of the sea'},
+  {w:'Thermochromatography',d:'A chromatographic technique using temperature gradients to separate compounds'},
+  {w:'Tintinnabulation',d:'A ringing or tinkling sound as of bells'},
+  {w:'Transinstitutionalization',d:'The transfer of people from one type of institution to another'},
+  {w:'Trinitrotoluene',d:'A yellow solid used as a high explosive; TNT'},
+  {w:'Utilitarianism',d:'The doctrine that actions are right if they are useful or for the benefit of the majority'},
+  {w:'Verisimilitude',d:'The quality of appearing true or real; plausibility in a narrative or work of art'},
+  {w:'Worcestershire',d:'A county in central England; a piquant sauce of soy, vinegar, and spices'},
+  {w:'Xiphiplastron',d:'The posterior segment of the plastron of a turtle'},
+  {w:'Xylotypographic',d:'Relating to the art of printing text or images from engraved wood blocks'},
+],
+
+master: [
+  {w:'Acetylglucocoroglaucigenin',d:'A compound related to glucocorticoid chemistry found in certain plants'},
+  {w:'Acrocephalopolydactylousdysplasia',d:'A syndrome combining skull abnormalities with extra fingers or toes'},
+  {w:'Adrenocorticotropin',d:'A pituitary hormone that stimulates the adrenal cortex to produce glucocorticoids'},
+  {w:'Anthropomorphization',d:'The attribution of human characteristics or behaviour to a non-human entity'},
+  {w:'Antidisestablishmentarianism',d:'Political opposition to the removal of the established status of a church, especially the Church of England'},
+  {w:'Antixerophthalmic',d:'Preventing or treating xerophthalmia, a vitamin A deficiency eye disease'},
+  {w:'Bourgeoisification',d:'The process by which something becomes associated with middle-class values or aesthetics'},
+  {w:'Bromochlorodifluoromethane',d:'A halon compound used as a fire extinguishing agent'},
+  {w:'Canaliculodacryocystorhinostomy',d:'A surgical procedure to create a new tear drainage pathway'},
+  {w:'Chargoggagoggmanchauggagoggchaubunagungamaugg',d:'A lake in Webster, Massachusetts; famously one of the longest place names in the USA'},
+  {w:'Cholangiocholecystocholedochectomy',d:'Surgical removal of bile ducts, gallbladder, and common bile duct'},
+  {w:'Cholangiopancreatography',d:'An imaging technique to visualise the bile ducts and pancreatic duct'},
+  {w:'Chondromyxohemangioendotheliosarcoma',d:'A rare malignant tumour involving cartilage, mucoid tissue, and blood vessels'},
+  {w:'Convolvulaceous',d:'Belonging to the family Convolvulaceae, including morning glory and bindweed'},
+  {w:'Corticopontocerebellar',d:'Relating to the neural pathway from cortex through pons to cerebellum'},
+  {w:'Corynebacteriumpseudotuberculosis',d:'A bacterium causing caseous lymphadenitis in sheep and goats'},
+  {w:'Counterimmunoelectrophoresis',d:'An electrophoretic technique used to detect antigens or antibodies'},
+  {w:'Dehydrothiotoluidine',d:'An organic compound used in dye manufacturing'},
+  {w:'Dermatofibrosarcomaprotuberans',d:'A rare slow-growing malignant skin tumour'},
+  {w:'Dextrodeorsumversion',d:'A downward and rightward rotation of both eyes'},
+  {w:'Dichlorodiphenyltrichloroethane',d:'A synthetic chemical formerly used as a pesticide; DDT'},
+  {w:'Diisopropylfluorophosphate',d:'An organophosphate nerve agent compound also used in medical research and ophthalmology'},
+  {w:'Eellogofusciouhipoppokunurious',d:'A rare nonce word meaning extraordinarily good or fine'},
+  {w:'Encephalocraniocutaneouslipomatosis',d:'A rare syndrome featuring lipomas and abnormalities affecting the brain, skull, and skin'},
+  {w:'Erythrocytapheresis',d:'A procedure to remove or exchange red blood cells from the blood'},
+  {w:'Ferriprotoporphyrin',d:'The iron-containing porphyrin component of hemoglobin; hemin'},
+  {w:'Floccinaucinihilipilification',d:'The habit of dismissing or belittling things as worthless or of no value'},
+  {w:'Fluorotetraferriphlogopite',d:'A synthetic mica mineral used in high-temperature applications'},
+  {w:'Gegenstandstheorie',d:'Meinong\'s philosophical theory of objects and their properties'},
+  {w:'Hematospectrophotometrically',d:'By means of spectrophotometric analysis of blood components'},
+  {w:'Hexakosioihexekontahexaphobia',d:'Fear of the number 666; a phobia associated with the concept of the Number of the Beast'},
+  {w:'Hippopotomonstrosesquipedaliophobia',d:'The informal term for the fear of long words'},
+  {w:'Honorificabilitudinity',d:'A Shakespearean coinage meaning the state of deserving or achieving honour'},
+  {w:'Hypothalamicpituitaryadrenocortical',d:'Relating to the HPA axis — the central stress response system linking brain and adrenal glands'},
+  {w:'Immunoelectrochemiluminescence',d:'A detection technique combining immunoassay and electrochemiluminescence'},
+  {w:'Inositolphosphorylceramide',d:'A complex lipid molecule found in fungi and plants, important in membrane biology'},
+  {w:'Laparohysterosalpingooophorectomy',d:'A laparoscopic surgical procedure to remove the uterus, cervix, fallopian tubes, and ovaries'},
+  {w:'Laryngotracheobronchitis',d:'Inflammation of the larynx, trachea, and bronchi; croup'},
+  {w:'Loncastuximabtesirine',d:'A cancer therapy drug that is an antibody-drug conjugate for B-cell lymphoma'},
+  {w:'Lymphangioleiomyomatosis',d:'A rare lung disease causing cysts and breathing difficulties'},
+  {w:'Micropachycephalosaurus',d:'A small dinosaur of the Late Cretaceous period with a thickened skull'},
+  {w:'Neohesperidindihydrochalcone',d:'A synthetic sweetener derived from the citrus flavonoid neohesperidin'},
+  {w:'Nonanonacontanonactanonaliagon',d:'A polygon with 999 sides'},
+  {w:'Nucleotidylexotransferase',d:'An enzyme transferring nucleotides in biochemical reactions'},
+  {w:'Orotatephosphoribosyltransferase',d:'An enzyme involved in pyrimidine biosynthesis'},
+  {w:'Otorhinolaryngological',d:'Relating to the medical specialty of ear, nose, and throat disorders'},
+  {w:'Photoplethysmography',d:'An optical technique measuring blood volume changes in tissue'},
+  {w:'Pneumoencephalography',d:'A radiographic procedure in which air is injected into the spinal canal to allow brain imaging'},
+  {w:'Pneumonoultramicroscopicsilicovolcanoconiosis',d:'A lung disease from inhaling fine volcanic silica dust; famously one of the longest English words'},
+  {w:'Polyphiloprogenitive',d:'Having many offspring; highly prolific in reproduction'},
+  {w:'Pseudopseudohypoparathyroidism',d:'An inherited disorder resembling pseudohypoparathyroidism but with normal blood calcium'},
+  {w:'Pseudorhombicuboctahedron',d:'A near-miss Johnson solid resembling a rhombicuboctahedron'},
+  {w:'Psychoneuroendocrinological',d:'Pertaining to the interaction between psychological processes and the neuroendocrine system'},
+  {w:'Psychophysicotherapeutics',d:'The therapeutic treatment of psychological disorders through physical means'},
+  {w:'Pyrrolizidinealkaloidosis',d:'Toxicity from pyrrolizidine alkaloids, natural compounds in certain plants that damage the liver'},
+  {w:'Ribulosebisphosphatecarboxylaseoxygenase',d:'The enzyme RuBisCO, which catalyses carbon fixation in photosynthesis'},
+  {w:'Sclerectoiridectomy',d:'Surgical excision of part of the sclera and iris to reduce eye pressure'},
+  {w:'Spectrophotofluorometry',d:'Measurement of the fluorescence properties of substances using light'},
+  {w:'Sphenopalatineganglioneuralgia',d:'Intense pain caused by irritation of the sphenopalatine ganglion'},
+  {w:'Sphygmomanometer',d:'An instrument for measuring blood pressure'},
+  {w:'Stereoelectroencephalography',d:'A technique using depth electrodes for three-dimensional brain activity mapping'},
+  {w:'Supercalifragilisticexpialidocious',d:'A well-known nonsense word from Mary Poppins meaning something wonderful or extraordinary'},
+  {w:'Thyroparathyroidectomy',d:'Surgical removal of the thyroid and parathyroid glands'},
+  {w:'Tonsillopharyngitis',d:'Inflammation of both the tonsils and the pharynx'},
+  {w:'Uvulopalatopharyngoplasty',d:'A surgical procedure to treat obstructive sleep apnoea'},
+  {w:'Ventriculocisternostomy',d:'A surgical procedure to create a passage between brain ventricles and cisterns'},
+],
+
+};
+
+
+// ── De-duplicate each tier ──
+(function(){
+  for(const k in WORDS){
+    const seen=new Set(),arr=[];
+    for(const w of WORDS[k]){const key=w.w.toLowerCase();if(!seen.has(key)){seen.add(key);arr.push(w);}}
+    WORDS[k]=arr;
+  }
+})();
+
+const DIFF_ORDER=['beginner','novice','moderate','advanced','expert','genius','master'];
+const DIFF_LABEL={beginner:'Beginner',novice:'Novice',moderate:'Moderate',advanced:'Advanced',expert:'Expert',genius:'Genius',master:'Master',random:'Random'};
+const BASE_TIME ={beginner:35,novice:32,moderate:28,advanced:24,expert:20,genius:16,master:12};
+const WORDS_PER_ROUND=10;
+
+// ── Game State ──
+const G={mode:'beginner',pendingMode:'beginner',round:1,streak:0,streakByDiff:{},wordIndex:0,currentWord:null,timeLeft:30,maxTime:30,timerInterval:null,phase:'idle',usedWords:new Set(),roundWords:[],dotStates:[],gameGen:0,tierWordPool:null,tierPoolForMode:null};
+
+const PRIMARY_TTS_KEY='spelling-bee-primary-tts';
+function getPrimaryTtsMode(){
+  try{
+    const v=localStorage.getItem(PRIMARY_TTS_KEY);
+    if(v==='browser'||v==='kokoro')return v;
+  }catch(e){}
+  return 'kokoro';
+}
+function setPrimaryTtsMode(mode){
+  try{localStorage.setItem(PRIMARY_TTS_KEY,mode);}catch(e){}
+}
+function applyTtsLayout(){
+  const kokoroPrimary=getPrimaryTtsMode()==='kokoro';
+  const listenBtn=document.getElementById('listenBtn');
+  const ttsBtn=document.getElementById('ttsBtn');
+  if(!listenBtn||!ttsBtn)return;
+  listenBtn.classList.toggle('primary-tts',kokoroPrimary);
+  listenBtn.classList.toggle('secondary-tts',!kokoroPrimary);
+  ttsBtn.classList.toggle('primary-tts',!kokoroPrimary);
+  ttsBtn.classList.toggle('secondary-tts',kokoroPrimary);
+}
+function togglePrimaryTts(){
+  setPrimaryTtsMode(getPrimaryTtsMode()==='kokoro'?'browser':'kokoro');
+  applyTtsLayout();
+  speakPrimaryTts();
+}
+function speakPrimaryTts(word){
+  const w=word||G.currentWord?.w;
+  if(!w)return;
+  if(getPrimaryTtsMode()==='kokoro')speakWord(w);
+  else speakWithBrowserTTS({word:w});
+}
+
+// ── Speech (Kokoro-js TTS) ──
+let kokoroTTS = null;
+let isInitializingTTS = false;
+
+async function initKokoro() {
+  if (kokoroTTS || isInitializingTTS) return;
+  isInitializingTTS = true;
+  try {
+    const { KokoroTTS } = await import("https://cdn.jsdelivr.net/npm/kokoro-js@1.2.1/dist/kokoro.web.js");
+    const model_id = "onnx-community/Kokoro-82M-v1.0-ONNX";
+    kokoroTTS = await KokoroTTS.from_pretrained(model_id, {
+      dtype: "fp32",
+      device: "webgpu",
+    });
+  } catch (e) {
+    console.warn("WebGPU initialization failed, falling back to wasm", e);
+    kokoroTTS = await KokoroTTS.from_pretrained(model_id, {
+      dtype: "q8",
+      device: "wasm",
+    });
+  }
+  isInitializingTTS = false;
+}
+
+// Preload on startup
+initKokoro();
+
+function kokoroInputText(lowerWord) {
+  return (lowerWord || '').trim();
+}
+
+let currentAudio = null;
+let preloadedAudio = null;
+let currentPreloadWord = null;
+
+const KOKORO_MAX_SILENT_RETRIES = 6;
+const AUDIBLE_PEAK_THRESHOLD = 1e-4;
+
+async function audioBlobIsAudible(blob) {
+  const AC = window.AudioContext || window.webkitAudioContext;
+  if (!AC) return true;
+  const ctx = new AC();
+  try {
+    const raw = await blob.arrayBuffer();
+    const buf = await ctx.decodeAudioData(raw.slice(0));
+    const data = buf.getChannelData(0);
+    const step = Math.max(1, Math.floor(data.length / 200000));
+    let peak = 0;
+    for (let i = 0; i < data.length; i += step) {
+      const a = Math.abs(data[i]);
+      if (a > peak) peak = a;
+    }
+    return peak >= AUDIBLE_PEAK_THRESHOLD;
+  } catch (e) {
+    console.warn("Could not verify audio loudness:", e);
+    return true;
+  } finally {
+    ctx.close();
+  }
+}
+
+async function kokoroGenerateAudibleBlob(target) {
+  for (let attempt = 0; attempt < KOKORO_MAX_SILENT_RETRIES; attempt++) {
+    if (!kokoroTTS) {
+      await initKokoro();
+      if (!kokoroTTS) return null;
+    }
+    try {
+      const audioData = await kokoroTTS.generate(kokoroInputText(target), {
+        voice: "af_heart",
+      });
+      if (!audioData.toBlob) continue;
+      const blob = audioData.toBlob();
+      if (await audioBlobIsAudible(blob)) return blob;
+      console.warn("Kokoro output was silent or too quiet, retrying…", attempt + 1);
+    } catch (e) {
+      console.error("Kokoro generate error:", e);
+    }
+  }
+  if (!kokoroTTS) {
+    await initKokoro();
+    if (!kokoroTTS) return null;
+  }
+  try {
+    const audioData = await kokoroTTS.generate(kokoroInputText(target), {
+      voice: "af_heart",
+    });
+    return audioData.toBlob ? audioData.toBlob() : null;
+  } catch (e) {
+    console.error("Kokoro final generate error:", e);
+    return null;
+  }
+}
+
+function wireAudioPlayingStart(audio, onPlaying) {
+  if (!onPlaying) return;
+  const run = () => {
+    onPlaying();
+  };
+  audio.addEventListener("playing", run, { once: true });
+}
+
+async function preloadWordAudio(word) {
+  const target = word.toLowerCase();
+  if (currentPreloadWord === target && preloadedAudio) return;
+  
+  currentPreloadWord = target;
+  preloadedAudio = null;
+
+  const blob = await kokoroGenerateAudibleBlob(target);
+  if (blob) {
+    const url = URL.createObjectURL(blob);
+    preloadedAudio = new Audio(url);
+  }
+}
+
+async function speakWord(word, opts) {
+  opts = opts || {};
+  const onPlaybackStart = opts.onPlaybackStart;
+  const target = (word || G.currentWord?.w || '').toLowerCase();
+  if (!target) return;
+
+  const btn = document.getElementById('listenBtn');
+  const anim = btn.animate([
+    { transform: 'scale(1)', borderColor: 'var(--border)' },
+    { transform: 'scale(1.1)', borderColor: 'var(--accent)' },
+    { transform: 'scale(1)', borderColor: 'var(--border)' }
+  ], { duration: 400 });
+
+  btn.classList.add('speaking');
+  
+  const finish = () => {
+    btn.classList.remove('speaking');
+    anim.cancel();
+  };
+
+  // Stop any currently playing audio
+  if (currentAudio) {
+    currentAudio.pause();
+    currentAudio.currentTime = 0;
+  }
+
+  // Use preloaded audio if available and matches the target word
+  if (preloadedAudio && currentPreloadWord === target) {
+    currentAudio = preloadedAudio;
+    currentAudio.onended = finish;
+    currentAudio.onerror = finish;
+    currentAudio.currentTime = 0;
+    wireAudioPlayingStart(currentAudio, onPlaybackStart);
+    currentAudio.play().catch(e => {
+      console.error("Playback failed:", e);
+      finish();
+    });
+    return;
+  }
+
+  const blob = await kokoroGenerateAudibleBlob(target);
+  if (blob) {
+    const url = URL.createObjectURL(blob);
+    currentAudio = new Audio(url);
+    currentAudio.onended = finish;
+    currentAudio.onerror = finish;
+    wireAudioPlayingStart(currentAudio, onPlaybackStart);
+    currentAudio.play().catch(e => {
+      console.error("Playback failed:", e);
+      finish();
+    });
+  } else {
+    finish();
+  }
+}
+
+// ── Browser TTS ──
+function speakWithBrowserTTS(options) {
+  const fromOpts =
+    options &&
+    typeof options === "object" &&
+    ("onSpeechStart" in options || "word" in options);
+  const word = fromOpts
+    ? (options.word ?? G.currentWord?.w ?? "")
+    : (G.currentWord?.w || "");
+  const onSpeechStart = fromOpts ? options.onSpeechStart : undefined;
+
+  if (!word || !window.speechSynthesis) {
+    if (onSpeechStart) onSpeechStart();
+    return;
+  }
+
+  const btn = document.getElementById("ttsBtn");
+
+  window.speechSynthesis.cancel();
+
+  const utter = new SpeechSynthesisUtterance(word);
+  utter.rate = 0.85;
+  utter.pitch = 1;
+  utter.volume = 1;
+
+  btn.classList.add("speaking");
+  utter.onstart = () => {
+    onSpeechStart?.();
+  };
+  utter.onend = () => btn.classList.remove("speaking");
+  utter.onerror = () => {
+    btn.classList.remove("speaking");
+    onSpeechStart?.();
+  };
+
+  window.speechSynthesis.speak(utter);
+}
+
+// ── Word selection ──
+function shuffle(arr){
+  const a=arr.slice();
+  for(let i=a.length-1;i>0;i--){
+    const j=Math.floor(Math.random()*(i+1));
+    [a[i],a[j]]=[a[j],a[i]];
+  }
+  return a;
+}
+function pickFrom(pool){
+  let avail=pool.filter(w=>!G.usedWords.has(w.w.toLowerCase()));
+  if(!avail.length){pool.forEach(w=>G.usedWords.delete(w.w.toLowerCase()));avail=pool;}
+  const w=avail[Math.floor(Math.random()*avail.length)];
+  G.usedWords.add(w.w.toLowerCase());
+  return w;
+}
+
+function buildRound(){
+  const words=[];
+  if(G.mode==='random'){
+    const all=DIFF_ORDER.flatMap(d=>WORDS[d].map(w=>({...w,_diff:d})));
+    for(let i=0;i<WORDS_PER_ROUND;i++)words.push({...pickFrom(all)});
+  } else {
+    if(!G.tierWordPool||G.tierWordPool.length===0)return [];
+    const n=Math.min(WORDS_PER_ROUND,G.tierWordPool.length);
+    for(let i=0;i<n;i++){
+      const w=G.tierWordPool.shift();
+      words.push({...w,_diff:G.mode});
+    }
+  }
+  return words;
+}
+
+// ── Timer ──
+function startTimer(){
+  clearInterval(G.timerInterval);
+  const bar=document.getElementById('timerBar'),lbl=document.getElementById('timerLabel');
+  G.timerInterval=setInterval(()=>{
+    G.timeLeft-=0.1;
+    const pct=Math.max(0,(G.timeLeft/G.maxTime)*100);
+    bar.style.width=pct+'%';lbl.textContent=Math.ceil(G.timeLeft)+'s';
+    const d=G.timeLeft<5,w=G.timeLeft<10;
+    bar.className='timer-bar'+(d?' danger':w?' warning':'');
+    lbl.className='timer-label'+(d?' danger':'');
+    if(G.timeLeft<=0){clearInterval(G.timerInterval);submitAnswer(true);}
+  },100);
+}
+function stopTimer(){clearInterval(G.timerInterval);}
+function resetTimerUI(){
+  document.getElementById('timerBar').style.width='100%';
+  document.getElementById('timerBar').className='timer-bar';
+  document.getElementById('timerLabel').className='timer-label';
+  document.getElementById('timerLabel').textContent=G.maxTime+'s';
+}
+
+// ── UI helpers ──
+function setFeedback(msg,cls){const el=document.getElementById('feedback');el.textContent=msg;el.className='feedback '+cls;}
+function updateStats(){
+  document.getElementById('roundNum').textContent=G.round;
+  document.getElementById('streakVal').textContent=G.streak;
+  document.getElementById('bestVal').textContent=getBestForDiff(G.mode);
+}
+function updateDiffRow(diff){
+  const row=document.getElementById('wordDiffRow');
+  row.dataset.diff=diff;
+  document.getElementById('wordDiffName').textContent=DIFF_LABEL[diff]||diff;
+}
+function updateDots(){
+  const c=document.getElementById('wordDots');c.innerHTML='';
+  G.dotStates.forEach((s,i)=>{const d=document.createElement('div');d.className='dot '+(i<G.wordIndex?s:(i===G.wordIndex?'current':''));c.appendChild(d);});
+}
+function updateCounter(){
+  const total=G.roundWords&&G.roundWords.length?G.roundWords.length:WORDS_PER_ROUND;
+  document.getElementById('wordCounter').textContent=`Word ${G.wordIndex+1} of ${total}`;
+}
+function getTimer(diff){const base=BASE_TIME[diff==='random'?'moderate':diff]||24;return Math.max(base-Math.floor(G.streak/3)*2,6);}
+
+// ── Spelling equivalence (US/UK & common alternates; extend SPELLING_EQUIV_GROUPS as needed) ──
+const SPELLING_EQUIV_GROUPS=[
+  ['catalog','catalogue'],['analog','analogue'],['dialog','dialogue'],['monolog','monologue'],
+  ['center','centre'],['centered','centred'],['centering','centring'],
+  ['neighbor','neighbour'],['neighboring','neighbouring'],['neighborhood','neighbourhood'],
+  ['color','colour'],['colored','coloured'],['coloring','colouring'],
+  ['favorite','favourite'],['flavor','flavour'],['honor','honour'],['humor','humour'],
+  ['labor','labour'],['laborer','labourer'],
+  ['organize','organise'],['organization','organisation'],['organizational','organisational'],
+  ['realize','realise'],['realization','realisation'],['recognize','recognise'],['recognizable','recognisable'],
+  ['defense','defence'],['offense','offence'],['defenseless','defenceless'],
+  ['gray','grey'],['armor','armour'],['tumor','tumour'],['vigor','vigour'],['splendor','splendour'],['rigor','rigour'],
+  ['theater','theatre'],['fiber','fibre'],['sulfur','sulphur'],['mold','mould'],['molt','moult'],
+  ['meter','metre'],['liter','litre'],['kilometer','kilometre'],
+  ['plow','plough'],['skeptic','sceptic'],['skeptical','sceptical'],
+  ['pajamas','pyjamas'],['jewelry','jewellery'],['mustache','moustache'],
+  ['maneuver','manoeuvre'],['maneuvers','manoeuvres'],
+  ['aluminum','aluminium'],['encyclopedia','encyclopaedia'],['anemia','anaemia'],['estrogen','oestrogen'],
+  ['pediatrician','paediatrician'],['leukemia','leukaemia'],['maneuverable','manoeuvrable'],
+  ['harbor','harbour'],
+  ['traveling','travelling'],['traveler','traveller'],['canceled','cancelled'],['canceling','cancelling'],
+  ['modeling','modelling'],['modeled','modelled'],['labeled','labelled'],['labeling','labelling'],
+  ['jeweled','jewelled'],['signaled','signalled'],['signaling','signalling'],
+  ['marvelous','marvellous'],['woolen','woollen'],['skillful','skilful'],['fulfill','fulfil'],
+  ['installment','instalment'],['enroll','enrol'],['distill','distil'],['instill','instil'],
+  ['aging','ageing'],['yogurt','yoghurt'],['newb','noob'],
+];
+const SPELLING_EQUIV_GROUP_INDEX=(()=>{const m=new Map();SPELLING_EQUIV_GROUPS.forEach((g,i)=>{for(const w of g)m.set(w.toLowerCase(),i);});return m;})();
+function spellingInSameEquivGroup(a,b){
+  a=a.toLowerCase();b=b.toLowerCase();
+  if(a===b)return true;
+  const ia=SPELLING_EQUIV_GROUP_INDEX.get(a),ib=SPELLING_EQUIV_GROUP_INDEX.get(b);
+  return ia!==undefined&&ia===ib;
+}
+function isAcceptedSpelling(raw,wordObj){
+  const t=(raw||'').trim().toLowerCase();
+  if(!t)return false;
+  const canon=wordObj.w.toLowerCase();
+  if(t===canon)return true;
+  if(Array.isArray(wordObj.alt)){for(const x of wordObj.alt){if(x.toLowerCase()===t)return true;}}
+  return spellingInSameEquivGroup(t,canon);
+}
+
+// ── Difficulty selection ──
+function initTierPoolForMode(){
+  if(G.mode==='random'){G.tierWordPool=null;G.tierPoolForMode=null;return;}
+  G.tierWordPool=shuffle(WORDS[G.mode].map(w=>({w:w.w,d:w.d})));
+  G.tierPoolForMode=G.mode;
+}
+function changeDiff(diff,btn){
+  document.querySelectorAll('.diff-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  G.mode=G.pendingMode=diff;
+  const start=document.getElementById('startScreen'),elim=document.getElementById('elimScreen'),win=document.getElementById('winScreen');
+  if(start.classList.contains('active')||elim.classList.contains('active')||win.classList.contains('active'))return;
+  initTierPoolForMode();
+  beginRound();
+}
+function selectStartDiff(diff,btn){
+  document.querySelectorAll('.start-diff-btn').forEach(b=>b.classList.remove('selected'));
+  btn.classList.add('selected');
+  G.pendingMode=diff;
+  document.querySelectorAll('.diff-btn').forEach(b=>b.classList.toggle('active',b.dataset.diff===diff));
+}
+
+// ── Game flow ──
+function startGame(){
+  G.mode=G.pendingMode;
+  document.getElementById('startScreen').classList.remove('active');
+  G.round=1;G.streak=0;G.streakByDiff={};G.usedWords=new Set();
+  initTierPoolForMode();
+  beginRound();
+}
+function startNewRound(){
+  document.getElementById('elimScreen').classList.remove('active');
+  G.round=1;G.streak=0;G.streakByDiff={};G.usedWords=new Set();
+  initTierPoolForMode();
+  beginRound();
+}
+function beginRound(){
+  G.gameGen++;
+  G.wordIndex=0;G.roundWords=buildRound();
+  if(G.mode!=='random'&&(!G.roundWords||!G.roundWords.length)){
+    console.warn('beginRound: empty round');
+    return;
+  }
+  G.dotStates=new Array(G.roundWords.length).fill('');
+  updateStats();loadWord();
+}
+async function loadWord(){
+  const gen=G.gameGen;
+  stopTimer();
+  const obj=G.roundWords[G.wordIndex];G.currentWord=obj;
+  G.maxTime=getTimer(obj._diff||G.mode);G.timeLeft=G.maxTime;
+  
+  updateDiffRow(obj._diff||G.mode);
+  document.getElementById('defText').textContent=obj.d;
+  updateCounter();updateDots();resetTimerUI();
+  
+  const inp=document.getElementById('spellInput');
+  inp.value='';inp.className='spell-input';
+  inp.disabled=true;inp.placeholder='Loading audio…';
+  document.getElementById('submitBtn').disabled=true;
+  setFeedback('⏳ Generating audio...','info-msg');
+
+  const primaryIsKokoro=getPrimaryTtsMode()==='kokoro';
+  if(primaryIsKokoro){
+    await preloadWordAudio(obj.w);
+  }else{
+    preloadWordAudio(obj.w).catch(()=>{});
+  }
+
+  if(gen!==G.gameGen)return;
+  inp.disabled=false;inp.placeholder='type your spelling…';inp.focus();
+  document.getElementById('submitBtn').disabled=false;
+  setFeedback('🔊 Listen carefully, then spell the word!','info-msg');
+  
+  G.phase='playing';
+  let timerStarted = false;
+  const tryStartTimer = () => {
+    if (gen !== G.gameGen || timerStarted) return;
+    timerStarted = true;
+    startTimer();
+  };
+  let fallbackTimer=null;
+  if(primaryIsKokoro){
+    fallbackTimer=setTimeout(() => {
+      if (gen !== G.gameGen) return;
+      console.warn(
+        "Kokoro playback did not start in time; falling back to browser TTS.",
+      );
+      if (currentAudio) {
+        currentAudio.pause();
+        currentAudio.currentTime = 0;
+      }
+      speakWithBrowserTTS({
+        word: obj.w,
+        onSpeechStart: tryStartTimer,
+      });
+    }, 8000);
+  }
+  setTimeout(() => {
+    if (gen !== G.gameGen) return;
+    if(primaryIsKokoro){
+      speakWord(undefined, {
+        onPlaybackStart: () => {
+          if(fallbackTimer)clearTimeout(fallbackTimer);
+          tryStartTimer();
+        },
+      });
+    }else{
+      speakWithBrowserTTS({
+        word: obj.w,
+        onSpeechStart: tryStartTimer,
+      });
+    }
+  }, 150);
+}
+function submitAnswer(auto=false){
+  if(G.phase!=='playing')return;
+  G.phase='feedback';stopTimer();
+  const inp=document.getElementById('spellInput');
+  const typedRaw=inp.value.trim();
+  inp.disabled=true;document.getElementById('submitBtn').disabled=true;
+  if(isAcceptedSpelling(typedRaw,G.currentWord)){
+    const gen=G.gameGen;
+    inp.classList.add('correct');
+    G.streak++;
+    const dk=G.mode;
+    G.streakByDiff[dk]=(G.streakByDiff[dk]||0)+1;
+    if(G.streakByDiff[dk]>getBestForDiff(dk))setBestForDiff(dk,G.streakByDiff[dk]);
+    G.dotStates[G.wordIndex]='done';updateStats();
+    const msgs=['✅ Correct!','🎉 Brilliant!','⚡ Perfect!','🔥 Nailed it!','🌟 Excellent!','👏 Spot on!'];
+    setFeedback(msgs[Math.floor(Math.random()*msgs.length)],'correct-msg');
+    document.getElementById('gameCard').classList.add('pop');
+    setTimeout(()=>document.getElementById('gameCard').classList.remove('pop'),300);
+    setTimeout(()=>{
+      if(gen!==G.gameGen)return;
+      G.wordIndex++;
+      const roundLen=G.roundWords.length;
+      if(G.wordIndex>=roundLen){
+        const tierDone=G.mode!=='random'&&(!G.tierWordPool||G.tierWordPool.length===0);
+        if(tierDone){
+          setFeedback(`🏆 You cleared every word in ${DIFF_LABEL[G.mode]}!`,'correct-msg');updateStats();
+          const g2=G.gameGen;
+          setTimeout(()=>{if(g2!==G.gameGen)return;showWinOverlay();},2000);
+        } else {
+          setFeedback(`🏆 Round ${G.round} cleared! ${G.streak} streak!`,'correct-msg');updateStats();
+          const g2=G.gameGen;
+          setTimeout(()=>{if(g2!==G.gameGen)return;G.round++;beginRound();},2000);
+        }
+      }
+      else loadWord();
+    },1100);
+  } else {
+    const gen=G.gameGen;
+    inp.value=typedRaw||'(no answer)';inp.classList.add('wrong');
+    G.dotStates[G.wordIndex]='wrong';updateDots();
+    document.getElementById('gameCard').classList.add('shake');
+    setTimeout(()=>document.getElementById('gameCard').classList.remove('shake'),450);
+    setFeedback(`❌ The answer was: ${G.currentWord.w}`,'wrong-msg');
+    setTimeout(()=>{if(gen!==G.gameGen)return;speakPrimaryTts(G.currentWord.w);},700);
+    setTimeout(()=>{
+      if(gen!==G.gameGen)return;
+      document.getElementById('correctWordDisplay').textContent=G.currentWord.w;
+      document.getElementById('yourAnswerDisplay').textContent=typedRaw?`You typed: "${typedRaw}"`:'No answer submitted';
+      document.getElementById('finalStreak').textContent=G.streak;
+      document.getElementById('finalRound').textContent=G.round;
+      document.getElementById('finalBest').textContent=getBestForDiff(G.mode);
+      document.getElementById('elimScreen').classList.add('active');
+    },2100);
+  }
+}
+function onInput(){document.getElementById('spellInput').className='spell-input';}
+function onKeyDown(e){if(e.key==='Enter'){e.preventDefault();submitAnswer();}}
+
+const BEST_BY_DIFF_KEY='spelling-bee-best-by-diff';
+const LEGACY_BEST_STREAK_KEY='spelling-bee-best-streak';
+const COMPLETED_TIERS_KEY='spelling-bee-completed-tiers';
+function loadCompletedTiers(){
+  try{
+    const s=localStorage.getItem(COMPLETED_TIERS_KEY);
+    if(s){
+      const o=JSON.parse(s);
+      if(o&&typeof o==='object'&&!Array.isArray(o))return o;
+    }
+  }catch(e){}
+  return {};
+}
+function markTierCompleted(diff){
+  if(diff==='random')return;
+  try{
+    const o=loadCompletedTiers();
+    o[diff]=true;
+    localStorage.setItem(COMPLETED_TIERS_KEY,JSON.stringify(o));
+  }catch(e){}
+  refreshCompletionUI();
+}
+function refreshCompletionUI(){
+  const done=loadCompletedTiers();
+  document.querySelectorAll('.diff-btn[data-diff]').forEach(btn=>{
+    const d=btn.dataset.diff;
+    if(d==='random')return;
+    btn.classList.toggle('completed',!!done[d]);
+  });
+  document.querySelectorAll('.start-diff-btn[data-diff]').forEach(btn=>{
+    const d=btn.dataset.diff;
+    if(d==='random')return;
+    btn.classList.toggle('completed',!!done[d]);
+  });
+}
+function showWinOverlay(){
+  G.gameGen++;
+  stopTimer();
+  G.phase='idle';
+  document.getElementById('spellInput').disabled=true;
+  document.getElementById('submitBtn').disabled=true;
+  const diff=G.mode;
+  const poolLen=WORDS[diff]?WORDS[diff].length:0;
+  markTierCompleted(diff);
+  document.getElementById('winDiff').textContent=DIFF_LABEL[diff]||diff;
+  document.getElementById('winWords').textContent=String(poolLen);
+  document.getElementById('winStreak').textContent=String(G.streak);
+  document.getElementById('winSub').textContent=`You spelled all ${poolLen} words in ${DIFF_LABEL[diff]}.`;
+  document.getElementById('winScreen').classList.add('active');
+}
+function continueFromWin(){
+  document.getElementById('winScreen').classList.remove('active');
+  document.getElementById('startScreen').classList.add('active');
+  G.phase='idle';
+}
+function loadAllBestByDiff(){
+  try{
+    const s=localStorage.getItem(BEST_BY_DIFF_KEY);
+    if(s){
+      const o=JSON.parse(s);
+      if(o&&typeof o==='object'&&!Array.isArray(o))return o;
+    }
+    const leg=localStorage.getItem(LEGACY_BEST_STREAK_KEY);
+    if(leg!=null){
+      const n=parseInt(leg,10);
+      if(Number.isFinite(n)&&n>=0){
+        const o={beginner:n};
+        localStorage.setItem(BEST_BY_DIFF_KEY,JSON.stringify(o));
+        localStorage.removeItem(LEGACY_BEST_STREAK_KEY);
+        return o;
+      }
+    }
+  }catch(e){}
+  return {};
+}
+function getBestForDiff(diff){
+  const n=loadAllBestByDiff()[diff];
+  return Number.isFinite(n)&&n>=0?n:0;
+}
+function setBestForDiff(diff,n){
+  try{
+    const o=loadAllBestByDiff();
+    o[diff]=n;
+    localStorage.setItem(BEST_BY_DIFF_KEY,JSON.stringify(o));
+  }catch(e){}
+}
+
+// ── Init word counts ──
+(function(){
+  applyTtsLayout();
+  updateStats();
+  let total=0;
+  for(const d of DIFF_ORDER){
+    const n=WORDS[d].length;total+=n;
+    const el=document.getElementById('cnt-'+d);if(el)el.textContent=n+' words';
+  }
+  const el=document.getElementById('cnt-random');if(el)el.textContent=total+' words';
+  refreshCompletionUI();
+})();
+</script>
+</body>
+</html>
