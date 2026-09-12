@@ -650,6 +650,55 @@
       color: var(--bg);
     }
 
+    /* LOADING SCREEN */
+    .loading-bar-wrap {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      width: 100%;
+      align-items: center;
+    }
+
+    .loading-track {
+      width: 100%;
+      height: 8px;
+      background: var(--border);
+      border-radius: 4px;
+      overflow: hidden;
+    }
+
+    .loading-bar {
+      height: 100%;
+      width: 0%;
+      background: var(--accent);
+      border-radius: 4px;
+      transition: width 0.2s ease;
+    }
+
+    .loading-status {
+      font-size: 0.9rem;
+      color: var(--muted);
+      font-weight: 400;
+    }
+
+    .skip-btn {
+      background: transparent;
+      border: 1px solid var(--border);
+      color: var(--muted);
+      border-radius: 8px;
+      padding: 10px 22px;
+      font-family: 'Outfit', sans-serif;
+      font-size: 0.85rem;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      align-self: center;
+    }
+
+    .skip-btn:hover {
+      border-color: var(--text);
+      color: var(--text);
+    }
+
     .diff-btn.completed,
     .start-diff-btn.completed {
       border: 2px solid #c9a227;
@@ -992,8 +1041,24 @@
     </div>
   </div>
 
+  <!-- LOADING AI VOICE -->
+  <div class="overlay active" id="loadingScreen">
+    <div class="overlay-card">
+      <span class="overlay-icon">🐝</span>
+      <div class="overlay-title">Spelling Bee</div>
+      <div class="overlay-sub" id="loadingSub">Loading AI Voice Announcer… This happens once and is saved for future visits.</div>
+      <div class="loading-bar-wrap">
+        <div class="loading-track">
+          <div class="loading-bar" id="loadingBar" style="width: 0%"></div>
+        </div>
+        <div class="loading-status" id="loadingStatus">Initializing AI engine…</div>
+      </div>
+      <button class="skip-btn" id="skipLoadingBtn" onclick="skipTtsLoading()">Skip &amp; Use Browser Voice</button>
+    </div>
+  </div>
+
   <!-- START -->
-  <div class="overlay active" id="startScreen">
+  <div class="overlay" id="startScreen">
     <div class="overlay-card">
       <span class="overlay-icon">🐝</span>
       <div class="overlay-title">Spelling Bee</div>
@@ -1972,24 +2037,90 @@
     let kokoroTTS = null;
     let isInitializingTTS = false;
 
+    function updateTtsProgress(p) {
+      if (!p) return;
+      const bar = document.getElementById('loadingBar');
+      const status = document.getElementById('loadingStatus');
+      if (p.status === 'progress' && p.total) {
+        const pct = Math.min(100, Math.round((p.loaded / p.total) * 100));
+        if (bar) bar.style.width = pct + '%';
+        if (status) status.textContent = `Downloading AI voice: ${pct}%`;
+      } else if (p.status === 'done') {
+        if (bar) bar.style.width = '100%';
+        if (status) status.textContent = 'Voice downloaded, preparing engine…';
+      } else if (p.status === 'initiate') {
+        if (status) status.textContent = 'Connecting to voice model…';
+      }
+    }
+
+    function dismissLoadingScreen(success) {
+      const loading = document.getElementById('loadingScreen');
+      const start = document.getElementById('startScreen');
+      const bar = document.getElementById('loadingBar');
+      const status = document.getElementById('loadingStatus');
+
+      if (success) {
+        if (bar) bar.style.width = '100%';
+        if (status) status.textContent = 'AI Voice Ready! 🐝';
+        setTimeout(() => {
+          loading?.classList.remove('active');
+          start?.classList.add('active');
+        }, 300);
+      } else {
+        if (status) status.textContent = 'Could not load AI voice. Continuing with browser voice…';
+        setPrimaryTtsMode('browser');
+        applyTtsLayout();
+        setTimeout(() => {
+          loading?.classList.remove('active');
+          start?.classList.add('active');
+        }, 1200);
+      }
+    }
+
+    function skipTtsLoading() {
+      setPrimaryTtsMode('browser');
+      applyTtsLayout();
+      document.getElementById('loadingScreen')?.classList.remove('active');
+      document.getElementById('startScreen')?.classList.add('active');
+    }
+
     async function initKokoro() {
       if (kokoroTTS || isInitializingTTS) return;
       isInitializingTTS = true;
+      const model_id = "onnx-community/Kokoro-82M-v1.0-ONNX";
       try {
         const { KokoroTTS } = await import("https://cdn.jsdelivr.net/npm/kokoro-js@1.2.1/dist/kokoro.web.js");
-        const model_id = "onnx-community/Kokoro-82M-v1.0-ONNX";
-        kokoroTTS = await KokoroTTS.from_pretrained(model_id, {
-          dtype: "fp32",
-          device: "webgpu",
-        });
-      } catch (e) {
-        console.warn("WebGPU initialization failed, falling back to wasm", e);
-        kokoroTTS = await KokoroTTS.from_pretrained(model_id, {
-          dtype: "q8",
-          device: "wasm",
-        });
+        try {
+          kokoroTTS = await KokoroTTS.from_pretrained(model_id, {
+            dtype: "fp32",
+            device: "webgpu",
+            progress_callback: updateTtsProgress,
+          });
+        } catch (e) {
+          console.warn("WebGPU initialization failed, falling back to wasm", e);
+          kokoroTTS = await KokoroTTS.from_pretrained(model_id, {
+            dtype: "q8",
+            device: "wasm",
+            progress_callback: updateTtsProgress,
+          });
+        }
+
+        // Warm up the engine so the first game word doesn't hit WebGPU shader compilation lag
+        if (kokoroTTS) {
+          const status = document.getElementById('loadingStatus');
+          if (status) status.textContent = 'Warming up voice engine…';
+          try {
+            await kokoroTTS.generate("bee", { voice: "af_heart" });
+          } catch (we) {
+            console.warn("Kokoro warmup generation non-fatal error:", we);
+          }
+        }
+      } catch (err) {
+        console.warn("Kokoro TTS initialization failed:", err);
+      } finally {
+        isInitializingTTS = false;
+        dismissLoadingScreen(!!kokoroTTS);
       }
-      isInitializingTTS = false;
     }
 
     // Preload on startup
@@ -2039,27 +2170,16 @@
           const audioData = await kokoroTTS.generate(kokoroInputText(target), {
             voice: "af_heart",
           });
-          if (!audioData.toBlob) continue;
+          if (!audioData || !audioData.toBlob) return null;
           const blob = audioData.toBlob();
           if (await audioBlobIsAudible(blob)) return blob;
           console.warn("Kokoro output was silent or too quiet, retrying…", attempt + 1);
         } catch (e) {
           console.error("Kokoro generate error:", e);
+          return null;
         }
       }
-      if (!kokoroTTS) {
-        await initKokoro();
-        if (!kokoroTTS) return null;
-      }
-      try {
-        const audioData = await kokoroTTS.generate(kokoroInputText(target), {
-          voice: "af_heart",
-        });
-        return audioData.toBlob ? audioData.toBlob() : null;
-      } catch (e) {
-        console.error("Kokoro final generate error:", e);
-        return null;
-      }
+      return null;
     }
 
     function wireAudioPlayingStart(audio, onPlaying) {
@@ -2120,6 +2240,7 @@
         currentAudio.play().catch(e => {
           console.error("Playback failed:", e);
           finish();
+          if (onPlaybackStart) onPlaybackStart();
         });
         return;
       }
@@ -2134,9 +2255,11 @@
         currentAudio.play().catch(e => {
           console.error("Playback failed:", e);
           finish();
+          if (onPlaybackStart) onPlaybackStart();
         });
       } else {
         finish();
+        if (onPlaybackStart) onPlaybackStart();
       }
     }
 
@@ -2308,8 +2431,9 @@
       document.querySelectorAll('.diff-btn').forEach(b => b.classList.remove('active'));
       btn.classList.add('active');
       G.mode = G.pendingMode = diff;
+      const loading = document.getElementById('loadingScreen');
       const start = document.getElementById('startScreen'), elim = document.getElementById('elimScreen'), win = document.getElementById('winScreen');
-      if (start.classList.contains('active') || elim.classList.contains('active') || win.classList.contains('active')) return;
+      if ((loading && loading.classList.contains('active')) || start.classList.contains('active') || elim.classList.contains('active') || win.classList.contains('active')) return;
       initTierPoolForMode();
       beginRound();
     }
@@ -2360,7 +2484,7 @@
       document.getElementById('submitBtn').disabled = true;
       setFeedback('⏳ Generating audio...', 'info-msg');
 
-      const primaryIsKokoro = getPrimaryTtsMode() === 'kokoro';
+      const primaryIsKokoro = getPrimaryTtsMode() === 'kokoro' && kokoroTTS !== null;
       if (primaryIsKokoro) {
         await preloadWordAudio(obj.w);
       } else {
